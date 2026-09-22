@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Draw every icon the app ships from the brand's stacked symbol
 (launch/…/brand/poiesis-assets/svg/app-icon.svg gives the geometry) in the green palette:
-Sage on a Forest rounded square.
+signal yellow on a Forest rounded square.
 
 Writes, next to this script: icon.png (Mac, 1024 canvas with the 824 square macOS expects),
 Poiesis.icns (via iconutil), tray-template.png (menu bar, black with alpha, macOS tints it),
@@ -20,8 +20,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 # The green palette of the 22 September colour study (brand/palette-study/README.md):
 # Forest is the ground, Sage "remains the softer colour for the logo and large graphic surfaces".
 FOREST = (25, 59, 45, 255)     # #193B2D
-SAGE = (198, 205, 174, 255)    # #C6CDAE
-GROUND, MARK = FOREST, SAGE
+SAGE = (198, 205, 174, 255)    # #C6CDAE, the study's logo colour on large surfaces
+SIGNAL = (239, 255, 0, 255)    # #EFFF00, the study's signal yellow; chosen for the icon's mark
+GROUND, MARK = FOREST, SIGNAL
 BLACK = (0, 0, 0, 255)
 
 # The symbol, as drawn in the brand's SVG (a 250.07 × 200 box): two stacked forward blocks.
@@ -31,9 +32,9 @@ SYMBOL = [
     (0.0, 100.0), (0.0, 44.0),
 ]
 SYMBOL_W, SYMBOL_H = 250.068, 200.0
-SYMBOL_SHARE = 0.64             # the symbol's width as a share of the square's side (app-icon.svg has 0.45; larger by request)
+SYMBOL_SHARE = 0.72             # the symbol's width as a share of the square's side (app-icon.svg has 0.45; larger by request)
 CORNER = 112.64 / 512.0         # corner radius as a share of the side
-SS = 4                          # supersampling for smooth edges
+SS = 8                          # supersampling: drawn at eight times the size, then scaled down, for crisp edges
 
 
 def symbol_points(cx, cy, width):
