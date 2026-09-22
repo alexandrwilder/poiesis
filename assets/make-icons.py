@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Draw every icon the app ships from the brand's app icon: the stacked symbol in
-Record Orange on a Deep Night rounded square (launch/…/brand/poiesis-assets/svg/app-icon.svg).
+"""Draw every icon the app ships from the brand's stacked symbol
+(launch/…/brand/poiesis-assets/svg/app-icon.svg gives the geometry) in the green palette:
+Sage on a Forest rounded square.
 
 Writes, next to this script: icon.png (Mac, 1024 canvas with the 824 square macOS expects),
 Poiesis.icns (via iconutil), tray-template.png (menu bar, black with alpha, macOS tints it),
@@ -16,8 +17,11 @@ import tempfile
 from PIL import Image, ImageDraw
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ORANGE = (255, 78, 0, 255)   # Record Orange #FF4E00
-NIGHT = (15, 15, 15, 255)    # Deep Night #0F0F0F
+# The green palette of the 22 September colour study (brand/palette-study/README.md):
+# Forest is the ground, Sage "remains the softer colour for the logo and large graphic surfaces".
+FOREST = (25, 59, 45, 255)     # #193B2D
+SAGE = (198, 205, 174, 255)    # #C6CDAE
+GROUND, MARK = FOREST, SAGE
 BLACK = (0, 0, 0, 255)
 
 # The symbol, as drawn in the brand's SVG (a 250.07 × 200 box): two stacked forward blocks.
@@ -27,7 +31,7 @@ SYMBOL = [
     (0.0, 100.0), (0.0, 44.0),
 ]
 SYMBOL_W, SYMBOL_H = 250.068, 200.0
-SYMBOL_SHARE = 230.46 / 512.0   # the symbol's width as a share of the square's side, from app-icon.svg
+SYMBOL_SHARE = 0.64             # the symbol's width as a share of the square's side (app-icon.svg has 0.45; larger by request)
 CORNER = 112.64 / 512.0         # corner radius as a share of the side
 SS = 4                          # supersampling for smooth edges
 
@@ -38,7 +42,7 @@ def symbol_points(cx, cy, width):
     return [(cx - w / 2 + x * scale, cy - h / 2 + y * scale) for x, y in SYMBOL]
 
 
-def draw_square(canvas, side, offset, ground=NIGHT, mark=ORANGE):
+def draw_square(canvas, side, offset, ground=GROUND, mark=MARK):
     """A rounded square of `side` px at `offset` on a transparent canvas, the mark centred."""
     big = Image.new("RGBA", (canvas * SS, canvas * SS), (0, 0, 0, 0))
     d = ImageDraw.Draw(big)
