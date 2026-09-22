@@ -1,0 +1,18 @@
+# One job, one thing: the tests, when Go code changes. Nothing else runs on a push.
+name: test
+on:
+  push:
+    paths: ["**.go", "go.mod", "go.sum", ".github/workflows/test.yml"]
+  pull_request:
+    paths: ["**.go", "go.mod", "go.sum", ".github/workflows/test.yml"]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - run: go vet ./... && go test ./...

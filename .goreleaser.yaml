@@ -1,0 +1,40 @@
+# One tag -> one release with a binary per system. Run: goreleaser release --clean
+# (needs GITHUB_TOKEN). The Mac build needs a Mac (the menu bar item and the window are
+# Objective-C); Linux and Windows build from anywhere.
+version: 2
+project_name: log_
+builds:
+  - id: log_
+    goos: [darwin, linux, windows]
+    goarch: [amd64, arm64]
+    ldflags: ["-s -w"]
+archives:
+  - id: default
+    formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+checksum:
+  name_template: checksums.txt
+brews:
+  - repository: { owner: alexandrwilder, name: homebrew-tap }
+    homepage: https://github.com/alexandrwilder/log_
+    description: "Talk to the camera, keep your own record, let any AI read it."
+    license: AGPL-3.0
+    dependencies:
+      - ffmpeg
+      - whisper-cpp
+    install: bin.install "log_"
+    caveats: "Run `log_ setup` once: it downloads the speech model (0.6 GB, verified) into the app's own folder."
+aurs:
+  - name: log_-bin
+    homepage: https://github.com/alexandrwilder/log_
+    description: "Talk to the camera, keep your own record, let any AI read it."
+    license: AGPL-3.0
+    maintainers: ["alexandrwilder"]
+    private_key: "{{ .Env.AUR_KEY }}"
+    git_url: "ssh://aur@aur.archlinux.org/log_-bin.git"
+    depends: [ffmpeg]
+    optdepends: ["whisper.cpp: speech to text", "ollama: local extraction"]
+    package: install -Dm755 ./log_ "${pkgdir}/usr/bin/log_"
