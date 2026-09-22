@@ -1,16 +1,16 @@
-# Contributing to LOG_
+# Contributing to Poiesis
 
 Thank you for looking. This file is the map: how to build it, where things are, where it
 was made to be extended, and the few rules that keep it honest.
 
 ## Build and run
 
-    go build -o log_ .            # one binary
+    go build -o poiesis .            # one binary
     go test ./...                 # the tests; some need a camera or the network:
-    LOG_CAPTURE_TEST=1 go test -run TestCapture .       # records 3 s from the camera
-    LOG_NET_TEST=1 go test -run TestEnsureModel .       # downloads the small model
-    ./log_ --vault ~/Documents/"LOG_ Vault Test"        # run against a test vault
-    ./log_ setup --app                                  # on a Mac: assemble LOG_.app
+    POIESIS_CAPTURE_TEST=1 go test -run TestCapture .       # records 3 s from the camera
+    POIESIS_NET_TEST=1 go test -run TestEnsureModel .       # downloads the small model
+    ./poiesis --vault ~/Documents/"Poiesis Vault Test"        # run against a test vault
+    ./poiesis setup --app                                  # on a Mac: assemble Poiesis.app
 
 Everything is Go; on a Mac the menu bar item and the window focus use a little
 Objective-C through cgo, so Xcode's command line tools are needed there.

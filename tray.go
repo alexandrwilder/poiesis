@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-// `log_ tray` puts LOG_ in the menu bar (Mac), the tray (Windows) or the bar's tray
+// `poiesis tray` puts Poiesis in the menu bar (Mac), the tray (Windows) or the bar's tray
 // (Omarchy, waybar): the streak at a glance, Open, Record now, Quit. `--login` makes it
 // start when you log in. It reads only the entry names in the vault, nothing else.
 
@@ -27,7 +27,7 @@ var trayICO []byte
 func trayOpen(root string)   { _ = openOrFocus(root, "") }
 func trayRecord(root string) { _ = openOrFocus(root, "record") }
 
-// runTray draws the item. On a Mac it must run from inside an app bundle (LOG_.app carries
+// runTray draws the item. On a Mac it must run from inside an app bundle (Poiesis.app carries
 // a helper for it); a crowded menu bar may hide it behind the notch on a laptop screen.
 func runTray(root string, login bool) error {
 	if login {
@@ -35,7 +35,7 @@ func runTray(root string, login bool) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println("LOG_ tray starts at login and is running now:", p)
+		fmt.Println("Poiesis tray starts at login and is running now:", p)
 		return nil // launchd runs it from here on
 	}
 	return trayRunNative(root)
@@ -62,7 +62,7 @@ func installLoginItem(root string) (string, error) {
 		// only a program inside an app bundle gets a menu bar item
 		bundled := macMenuBinary()
 		if _, err := os.Stat(bundled); err != nil {
-			return "", fmt.Errorf("run `log_ setup --app` first: the menu bar item needs LOG_.app")
+			return "", fmt.Errorf("run `poiesis setup --app` first: the menu bar item needs Poiesis.app")
 		}
 		self = bundled
 	}
@@ -72,12 +72,12 @@ func installLoginItem(root string) (string, error) {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return "", err
 		}
-		p := filepath.Join(dir, "app.logunderscore.tray.plist")
+		p := filepath.Join(dir, "app.poiesis.tray.plist")
 		plist := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-  <key>Label</key><string>app.logunderscore.tray</string>
-  <key>AssociatedBundleIdentifiers</key><array><string>app.logunderscore</string><string>app.logunderscore.menu</string></array>
+  <key>Label</key><string>app.poiesis.tray</string>
+  <key>AssociatedBundleIdentifiers</key><array><string>app.poiesis</string><string>app.poiesis.menu</string></array>
   <key>ProgramArguments</key><array><string>%s</string><string>tray</string><string>--vault</string><string>%s</string></array>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><false/>
@@ -93,7 +93,7 @@ func installLoginItem(root string) (string, error) {
 		return p, nil
 	case "windows":
 		dir := filepath.Join(os.Getenv("APPDATA"), "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
-		p := filepath.Join(dir, "LOG_ tray.cmd")
+		p := filepath.Join(dir, "Poiesis tray.cmd")
 		cmd := fmt.Sprintf("@start \"\" \"%s\" tray --vault \"%s\"\r\n", self, root)
 		return p, os.WriteFile(p, []byte(cmd), 0o644)
 	default:
@@ -101,8 +101,8 @@ func installLoginItem(root string) (string, error) {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return "", err
 		}
-		p := filepath.Join(dir, "log_-tray.desktop")
-		desktop := fmt.Sprintf("[Desktop Entry]\nType=Application\nName=LOG_ tray\nExec=%s tray --vault %q\nX-GNOME-Autostart-enabled=true\n", self, root)
+		p := filepath.Join(dir, "poiesis-tray.desktop")
+		desktop := fmt.Sprintf("[Desktop Entry]\nType=Application\nName=Poiesis tray\nExec=%s tray --vault %q\nX-GNOME-Autostart-enabled=true\n", self, root)
 		return p, os.WriteFile(p, []byte(desktop), 0o644)
 	}
 }

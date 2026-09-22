@@ -1,4 +1,4 @@
-module log_
+module poiesis
 
 go 1.26.3
 

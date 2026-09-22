@@ -12,11 +12,11 @@ who has never seen the code.
    the vault has a language setting. `dayHeading` in `tui_log.go`.
 4. **Windows: the one-line installer.** `install.ps1` is a draft nobody has run. Run it on
    a Windows machine, make it true, report what the tray does there.
-5. **Omarchy: the window.** On Arch with Ghostty or Alacritty, `log_ window` should open
+5. **Omarchy: the window.** On Arch with Ghostty or Alacritty, `poiesis window` should open
    the frameless window with the picture. Verify, fix the flags, screenshot.
 6. **A third extractor.** `extract.go`, the `Extractor` interface. llama.cpp directly, or
    any local server that speaks the OpenAI shape. Must score on `plans/eval` before merge.
-7. **`log_ update`.** Check the release page, download the new binary, verify the checksum,
+7. **`poiesis update`.** Check the release page, download the new binary, verify the checksum,
    replace itself, re-run `setup --app` on a Mac. The plan is in
    `plans/distribution-and-price.md`.
 8. **The Map.** A screen of lanes over time, one per mission and one per person, with the

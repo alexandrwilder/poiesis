@@ -59,7 +59,7 @@ func cropRect(w, h, cols, rows int) (x, y, cw, ch int) {
 // frame replaces the last. q=2 keeps the terminal from answering into the key stream.
 func kittyFrame(rgb []byte, w, h, cols, rows int) string {
 	x, y, cw, ch := cropRect(w, h, cols, rows)
-	if os.Getenv("LOG_IMAGE_INLINE") != "1" {
+	if os.Getenv("POIESIS_IMAGE_INLINE") != "1" {
 		if s, ok := kittyFrameFile(rgb, w, h, cols, rows, x, y, cw, ch); ok {
 			return s
 		}
@@ -74,7 +74,7 @@ var frameFileTurn int
 // never reads them cannot fill the disk.
 func kittyFrameFile(rgb []byte, w, h, cols, rows, x, y, cw, ch int) (string, bool) {
 	frameFileTurn = (frameFileTurn + 1) % 3
-	path := filepath.Join(os.TempDir(), fmt.Sprintf("tty-graphics-protocol-log_-%d-%d.rgb", os.Getpid(), frameFileTurn))
+	path := filepath.Join(os.TempDir(), fmt.Sprintf("tty-graphics-protocol-poiesis-%d-%d.rgb", os.Getpid(), frameFileTurn))
 	if err := os.WriteFile(path, rgb, 0o600); err != nil {
 		return "", false
 	}
@@ -84,7 +84,7 @@ func kittyFrameFile(rgb []byte, w, h, cols, rows, x, y, cw, ch int) (string, boo
 }
 
 // kittyFrameInline sends the pixels through the terminal's input, for terminals that
-// cannot read files (or with LOG_IMAGE_INLINE=1).
+// cannot read files (or with POIESIS_IMAGE_INLINE=1).
 func kittyFrameInline(rgb []byte, w, h, cols, rows, x, y, cw, ch int) string {
 	var zb bytes.Buffer
 	zw, _ := zlib.NewWriterLevel(&zb, zlib.BestSpeed)

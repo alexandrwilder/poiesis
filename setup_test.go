@@ -7,10 +7,10 @@ import (
 )
 
 // The download path of setup, on the smallest model (under 1 MB): a fresh folder ends up
-// with the file, the checksum holds, and a second run downloads nothing. LOG_NET_TEST=1.
+// with the file, the checksum holds, and a second run downloads nothing. POIESIS_NET_TEST=1.
 func TestEnsureModelDownloads(t *testing.T) {
-	if os.Getenv("LOG_NET_TEST") != "1" {
-		t.Skip("needs the network; run with LOG_NET_TEST=1")
+	if os.Getenv("POIESIS_NET_TEST") != "1" {
+		t.Skip("needs the network; run with POIESIS_NET_TEST=1")
 	}
 	dir := t.TempDir()
 	var lines []string

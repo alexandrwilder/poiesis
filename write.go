@@ -382,7 +382,7 @@ func writeEpisode(v *Vault, ep *Episode, lines []Line, claims []Claim) error {
 		for i, id := range c.About {
 			links[i] = "[[" + id + "]]"
 		}
-		fmt.Fprintf(&b, "- **%s** [%s](log://%s?t=%.1f) %s — \"%s\" · %s\n", c.Kind, mmss(c.Source.Start), ep.ID, c.Source.Start, c.Text, c.Quote, strings.Join(links, " "))
+		fmt.Fprintf(&b, "- **%s** [%s](poiesis://%s?t=%.1f) %s — \"%s\" · %s\n", c.Kind, mmss(c.Source.Start), ep.ID, c.Source.Start, c.Text, c.Quote, strings.Join(links, " "))
 	}
 	b.WriteString("\n## Transcript\n\n")
 	for _, l := range lines {
@@ -540,7 +540,7 @@ func rebuildEntityPages(v *Vault) error {
 			if c.ValidTo != nil {
 				super = " ~~superseded~~"
 			}
-			fmt.Fprintf(&b, "- %s · **%s** · %s — \"%s\" · [[%s]] [%s](log://%s?t=%.1f)%s\n",
+			fmt.Fprintf(&b, "- %s · **%s** · %s — \"%s\" · [[%s]] [%s](poiesis://%s?t=%.1f)%s\n",
 				c.StatedAt[:10], c.Kind, c.Text, c.Quote, c.Source.Episode, mmss(c.Source.Start), c.Source.Episode, c.Source.Start, super)
 		}
 		// related: entities that share claims with this one

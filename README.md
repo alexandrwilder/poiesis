@@ -1,8 +1,8 @@
-# LOG_
+# Poiesis
 
 Talk to the camera for three minutes. Keep your own record. Let any AI read it.
 
-LOG_ is a video log that lives on your computer. Each entry is a short recording of you
+Poiesis is a video log that lives on your computer. Each entry is a short recording of you
 talking; the app turns it into words, then into claims, then into a log you can search,
 and an AI you choose can read years of it in one go. Nothing leaves your machine: the
 speech model and the local AI run inside the app. Your log is a folder of plain files.
@@ -14,12 +14,12 @@ speech model and the local AI run inside the app. Your log is a folder of plain 
 
 Mac, one line:
 
-    curl -fsSL https://raw.githubusercontent.com/alexandrwilder/log_/main/install.sh | sh
+    curl -fsSL https://raw.githubusercontent.com/alexandrwilder/poiesis/main/install.sh | sh
 
-Mac with Homebrew: `brew install --cask alexandrwilder/tap/log_`. Omarchy and Arch: `yay -S log_-bin`.
-Linux: the same one line as the Mac. Windows: `irm https://raw.githubusercontent.com/alexandrwilder/log_/main/install.ps1 | iex`.
+Mac with Homebrew: `brew install --cask alexandrwilder/tap/poiesis`. Omarchy and Arch: `yay -S poiesis-bin`.
+Linux: the same one line as the Mac. Windows: `irm https://raw.githubusercontent.com/alexandrwilder/poiesis/main/install.ps1 | iex`.
 
-Then open LOG_. Press space, talk, press enter.
+Then open Poiesis. Press space, talk, press enter.
 
 ## What you get
 
@@ -28,10 +28,10 @@ Then open LOG_. Press space, talk, press enter.
 - **The log.** Every entry under its day, a search bar that searches what you said, your
   missions as buttons. Enter opens an entry: the words with their times, the claims in
   the margin, and what you said earlier about the same people and things.
-- **Your files.** `~/Documents/LOG_ Vault`: one markdown page per entry, one page per
+- **Your files.** `~/Documents/Poiesis Vault`: one markdown page per entry, one page per
   person, project or mission, and one file of claims. Obsidian opens it. So does grep.
-- **The AI connection.** `log_ setup --mcp` lets Claude Code read the log; other apps get
-  their lines from `log_ mcp --connect`. Four verbs, all read-only: orient, search, read,
+- **The AI connection.** `poiesis setup --mcp` lets Claude Code read the log; other apps get
+  their lines from `poiesis mcp --connect`. Four verbs, all read-only: orient, search, read,
   moment. Ask "what did I say about the bakery in August, and play the moment."
 
 ## The promise
@@ -44,7 +44,7 @@ go anywhere. The settings page says which is on, in one line, at the top.
 ## The files, the format, the AI connection
 
 `docs/FORMAT.md` explains the vault in plain words with examples. The format and the AI
-connection are MIT licensed so that other tools can read and write LOG_ vaults freely.
+connection are MIT licensed so that other tools can read and write Poiesis vaults freely.
 The app itself is AGPL-3.0. The tools inside the app and their licences are listed in
 `NOTICE.md`.
 

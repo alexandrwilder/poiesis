@@ -593,18 +593,34 @@ func hhmmss(d time.Duration) string {
 	return fmt.Sprintf("%02d:%02d:%02d", s/3600, (s%3600)/60, s%60)
 }
 
-// wordmark is LOG_ in five rows of blocks.
-var wordmark = []string{
-	"█      ████   ████      ",
-	"█     █    █ █          ",
-	"█     █    █ █   ██     ",
-	"█     █    █ █    █     ",
-	"█████  ████   ████  ████",
+// wordmark is Poiesis in five rows of blocks.
+var wordmark = blockRows("POIESIS")
+
+// blockFont: the letters the mark needs, five rows each, one space between letters.
+var blockFont = map[rune][]string{
+	'P': {"████ ", "█   █", "████ ", "█    ", "█    "},
+	'O': {" ███ ", "█   █", "█   █", "█   █", " ███ "},
+	'I': {"███", " █ ", " █ ", " █ ", "███"},
+	'E': {"█████", "█    ", "████ ", "█    ", "█████"},
+	'S': {" ████", "█    ", " ███ ", "    █", "████ "},
+}
+
+func blockRows(word string) []string {
+	rows := make([]string, 5)
+	for i, ch := range word {
+		for r, g := range blockFont[ch] {
+			if i > 0 {
+				rows[r] += " "
+			}
+			rows[r] += g
+		}
+	}
+	return rows
 }
 
 // wordmarkOverlays centres the mark in a body of w × h cells.
 func wordmarkOverlays(w, h int) []overlayText {
-	if w < 30 || h < 9 {
+	if w < len([]rune(wordmark[0]))+4 || h < 9 {
 		return nil
 	}
 	top := (h - len(wordmark)) / 2

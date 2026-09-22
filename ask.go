@@ -161,5 +161,5 @@ func copyText(s string) error {
 
 // forYourAI is the question with the instruction any AI app needs first.
 func forYourAI(question string) string {
-	return "Orient yourself in my LOG_ vault first. Then: " + question + " Cite the entry and the second for every fact, and give me the moment to play."
+	return "Orient yourself in my Poiesis vault first. Then: " + question + " Cite the entry and the second for every fact, and give me the moment to play."
 }

@@ -10,7 +10,7 @@ import (
 )
 
 // machineStruggles is true when the computer is under pressure: little free memory or a
-// high load. LOG_ then takes the lighter video by itself. Checked at most once a minute.
+// high load. Poiesis then takes the lighter video by itself. Checked at most once a minute.
 
 var (
 	pressureMu   sync.Mutex

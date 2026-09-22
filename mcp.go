@@ -45,7 +45,7 @@ type momentIn struct {
 }
 
 func runMCP(v *Vault) error {
-	server := mcp.NewServer(&mcp.Implementation{Name: "log_", Version: version}, nil)
+	server := mcp.NewServer(&mcp.Implementation{Name: "poiesis", Version: version}, nil)
 	ro := &mcp.ToolAnnotations{ReadOnlyHint: true}
 
 	mcp.AddTool(server, &mcp.Tool{Name: "orient", Annotations: ro,
@@ -238,7 +238,7 @@ func (v *Vault) mcpSearch(in searchIn) (string, error) {
 			if shown >= limit {
 				break
 			}
-			fmt.Fprintf(&b, "- %s · %s · %s — \"%s\" · %s t=%.1f (log://%s?t=%.1f) · about: %s\n",
+			fmt.Fprintf(&b, "- %s · %s · %s — \"%s\" · %s t=%.1f (poiesis://%s?t=%.1f) · about: %s\n",
 				c.StatedAt[:10], c.Kind, c.Text, c.Quote, c.Source.Episode, c.Source.Start, c.Source.Episode, c.Source.Start, strings.Join(c.About, ", "))
 			shown++
 		}
@@ -249,7 +249,7 @@ func (v *Vault) mcpSearch(in searchIn) (string, error) {
 			if shown >= limit {
 				break
 			}
-			fmt.Fprintf(&b, "- %s t=%.1f: %s (log://%s?t=%.1f)\n", h.ep.ID, h.line.Start, h.line.Text, h.ep.ID, h.line.Start)
+			fmt.Fprintf(&b, "- %s t=%.1f: %s (poiesis://%s?t=%.1f)\n", h.ep.ID, h.line.Start, h.line.Text, h.ep.ID, h.line.Start)
 			shown++
 		}
 	}
@@ -278,7 +278,7 @@ func (v *Vault) mcpMoment(in momentIn) (string, error) {
 	}
 	lo, hi := in.T-w/2, in.T+w/2
 	var b strings.Builder
-	fmt.Fprintf(&b, "%s · day %d · recorded %s · %s long · around %s (t=%.1f)\nplay: log://%s?t=%.1f · file: %s\n\nTranscript:\n",
+	fmt.Fprintf(&b, "%s · day %d · recorded %s · %s long · around %s (t=%.1f)\nplay: poiesis://%s?t=%.1f · file: %s\n\nTranscript:\n",
 		ep.ID, ep.Day, strings.Replace(ep.RecordedAt[:16], "T", " ", 1), mmss(ep.DurationS), mmss(in.T), in.T, ep.ID, in.T, ep.Media)
 	n := 0
 	for _, l := range lines {
@@ -325,12 +325,12 @@ func connectText(v *Vault) string {
 	return fmt.Sprintf(`Connect your AI to this vault. The server runs on your machine and only reads.
 
 Claude Code (one command):
-  claude mcp add log_ -- %q mcp --vault %q
+  claude mcp add poiesis -- %q mcp --vault %q
 
 Claude Desktop: add to claude_desktop_config.json (Settings → Developer → Edit Config):
   {
     "mcpServers": {
-      "log_": { "command": %q, "args": ["mcp", "--vault", %q] }
+      "poiesis": { "command": %q, "args": ["mcp", "--vault", %q] }
     }
   }
 

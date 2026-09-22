@@ -68,23 +68,23 @@ func appStateDir() string {
 
 // defaultModelsDir is the app's own data folder, never inside the vault.
 func defaultModelsDir() string {
-	if d := os.Getenv("LOG_MODELS"); d != "" {
+	if d := os.Getenv("POIESIS_MODELS"); d != "" {
 		return d
 	}
 	home, _ := os.UserHomeDir()
 	switch runtime.GOOS {
 	case "darwin":
-		return filepath.Join(home, "Library", "Application Support", "LOG_", "models")
+		return filepath.Join(home, "Library", "Application Support", "Poiesis", "models")
 	case "windows":
 		if a := os.Getenv("APPDATA"); a != "" {
-			return filepath.Join(a, "LOG_", "models")
+			return filepath.Join(a, "Poiesis", "models")
 		}
-		return filepath.Join(home, "LOG_", "models")
+		return filepath.Join(home, "Poiesis", "models")
 	default:
 		if x := os.Getenv("XDG_DATA_HOME"); x != "" {
-			return filepath.Join(x, "LOG_", "models")
+			return filepath.Join(x, "Poiesis", "models")
 		}
-		return filepath.Join(home, ".local", "share", "log_", "models")
+		return filepath.Join(home, ".local", "share", "poiesis", "models")
 	}
 }
 

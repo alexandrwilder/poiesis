@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-// `log_ setup` makes a fresh machine ready, out loud: which tools are there, which model
+// `poiesis setup` makes a fresh machine ready, out loud: which tools are there, which model
 // files get downloaded (checksum-verified, into the app's own folder, only what was asked
 // for), where the vault is, who extracts claims, and optionally the AI connection and a
 // Mac app icon. It never installs anything without --install, and it prints the exact
@@ -46,12 +46,12 @@ type setupOptions struct {
 	Swedish   bool // also fetch the Swedish-only model
 	Extractor string
 	MCP       bool // register with Claude Code
-	App       bool // make ~/Applications/LOG_.app (macOS)
+	App       bool // make ~/Applications/Poiesis.app (macOS)
 }
 
 func runSetup(v *Vault, o setupOptions) error {
 	say := func(f string, a ...any) { fmt.Printf(f+"\n", a...) }
-	say("log_ setup  ·  vault %s", v.Root)
+	say("poiesis setup  ·  vault %s", v.Root)
 	say("")
 
 	// 1. tools
@@ -65,7 +65,7 @@ func runSetup(v *Vault, o setupOptions) error {
 			}
 			checkTools(v, say)
 		} else if cmd != "" {
-			say("  to install them:  %s   (or run: log_ setup --install)", cmd)
+			say("  to install them:  %s   (or run: poiesis setup --install)", cmd)
 		}
 	}
 	say("")
@@ -121,12 +121,12 @@ func runSetup(v *Vault, o setupOptions) error {
 		if err != nil {
 			return err
 		}
-		say("APP  ·  %s  (open it from Launchpad or Spotlight; it opens LOG_ in its own window)", p)
+		say("APP  ·  %s  (open it from Launchpad or Spotlight; it opens Poiesis in its own window)", p)
 		say("")
 	}
 
-	say("READY.  start with:  log_        (here in the terminal)")
-	say("                or:  log_ window  (its own clean window)")
+	say("READY.  start with:  poiesis        (here in the terminal)")
+	say("                or:  poiesis window  (its own clean window)")
 	say("nothing leaves this computer unless you chose --extractor claude with your own key.")
 	return nil
 }
@@ -328,7 +328,7 @@ func checkOllama(v *Vault, install bool, say func(string, ...any)) error {
 		say("  pulling %s with ollama …", model)
 		return runShell("ollama pull " + model)
 	}
-	return fmt.Errorf("✗ Ollama runs but %s is not pulled  ·  run: ollama pull %s   (or: log_ setup --install)", model, model)
+	return fmt.Errorf("✗ Ollama runs but %s is not pulled  ·  run: ollama pull %s   (or: poiesis setup --install)", model, model)
 }
 
 // registerMCP tells Claude Code about this vault (user scope), replacing an older entry.
@@ -338,10 +338,10 @@ func registerMCP(v *Vault, say func(string, ...any)) error {
 		return err
 	}
 	if _, err := exec.LookPath("claude"); err != nil {
-		return fmt.Errorf("Claude Code is not installed; to connect another AI app run: log_ mcp --connect")
+		return fmt.Errorf("Claude Code is not installed; to connect another AI app run: poiesis mcp --connect")
 	}
-	_ = exec.Command("claude", "mcp", "remove", "log_", "-s", "user").Run()
-	out, err := exec.Command("claude", "mcp", "add", "--scope", "user", "log_", "--", self, "mcp", "--vault", v.Root).CombinedOutput()
+	_ = exec.Command("claude", "mcp", "remove", "poiesis", "-s", "user").Run()
+	out, err := exec.Command("claude", "mcp", "add", "--scope", "user", "poiesis", "--", self, "mcp", "--vault", v.Root).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("claude mcp add: %s", strings.TrimSpace(string(out)))
 	}
@@ -349,27 +349,27 @@ func registerMCP(v *Vault, say func(string, ...any)) error {
 	return nil
 }
 
-// writeMacApp builds ~/Applications/LOG_.app, the way macOS expects a small app with a
+// writeMacApp builds ~/Applications/Poiesis.app, the way macOS expects a small app with a
 // menu bar item: the app itself opens the log window and quits, and a helper inside it
-// (Contents/Library/LoginItems/LOG_ Menu.app) holds the menu bar item and starts at login.
+// (Contents/Library/LoginItems/Poiesis Menu.app) holds the menu bar item and starts at login.
 // They are separate bundles on purpose: one app cannot both keep the menu bar item and be
 // launched again by double-clicking, because macOS only re-activates what is running.
-// Both carry a copy of the binary, so `log_ setup --app` refreshes them after a rebuild.
+// Both carry a copy of the binary, so `poiesis setup --app` refreshes them after a rebuild.
 func writeMacApp(v *Vault) (string, error) {
 	self, err := os.Executable()
 	if err != nil {
 		return "", err
 	}
 	home := os.Getenv("HOME")
-	app := filepath.Join(home, "Applications", "LOG_.app")
-	menu := filepath.Join(app, "Contents", "Library", "LoginItems", "LOG_ Menu.app")
-	icns := filepath.Join(filepath.Dir(self), "assets", "LOG_.icns")
+	app := filepath.Join(home, "Applications", "Poiesis.app")
+	menu := filepath.Join(app, "Contents", "Library", "LoginItems", "Poiesis Menu.app")
+	icns := filepath.Join(filepath.Dir(self), "assets", "Poiesis.icns")
 
 	for _, b := range []struct {
 		root, id, extra string
 	}{
-		{app, "app.logunderscore", ""},
-		{menu, "app.logunderscore.menu", "  <key>LSUIElement</key><true/>\n"},
+		{app, "app.poiesis", ""},
+		{menu, "app.poiesis.menu", "  <key>LSUIElement</key><true/>\n"},
 	} {
 		macos := filepath.Join(b.root, "Contents", "MacOS")
 		res := filepath.Join(b.root, "Contents", "Resources")
@@ -378,18 +378,18 @@ func writeMacApp(v *Vault) (string, error) {
 				return "", err
 			}
 		}
-		if err := copyInto(self, filepath.Join(macos, "log_"), 0o755); err != nil {
+		if err := copyInto(self, filepath.Join(macos, "poiesis"), 0o755); err != nil {
 			return "", err
 		}
 		if err := os.WriteFile(filepath.Join(res, "vault.txt"), []byte(v.Root+"\n"), 0o644); err != nil {
 			return "", err
 		}
 		if _, err := os.Stat(icns); err == nil {
-			_ = copyInto(icns, filepath.Join(res, "LOG_.icns"), 0o644)
+			_ = copyInto(icns, filepath.Join(res, "Poiesis.icns"), 0o644)
 		}
-		name := "LOG_"
-		if b.id != "app.logunderscore" {
-			name = "LOG_ Menu"
+		name := "Poiesis"
+		if b.id != "app.poiesis" {
+			name = "Poiesis Menu"
 		}
 		plist := `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -399,13 +399,13 @@ func writeMacApp(v *Vault) (string, error) {
   <key>CFBundleIdentifier</key><string>` + b.id + `</string>
   <key>CFBundleVersion</key><string>` + version + "." + fmt.Sprint(time.Now().Unix()) + `</string>
   <key>CFBundleShortVersionString</key><string>` + version + `</string>
-  <key>CFBundleExecutable</key><string>log_</string>
-  <key>CFBundleIconFile</key><string>LOG_</string>
+  <key>CFBundleExecutable</key><string>poiesis</string>
+  <key>CFBundleIconFile</key><string>Poiesis</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>NSHighResolutionCapable</key><true/>
-` + b.extra + `  <key>NSDocumentsFolderUsageDescription</key><string>LOG_ keeps your entries in a folder in Documents. It reads and writes only that folder.</string>
-  <key>NSCameraUsageDescription</key><string>LOG_ records you when you press space. Nothing leaves this computer.</string>
-  <key>NSMicrophoneUsageDescription</key><string>LOG_ records your voice when you press space. Nothing leaves this computer.</string>
+` + b.extra + `  <key>NSDocumentsFolderUsageDescription</key><string>Poiesis keeps your entries in a folder in Documents. It reads and writes only that folder.</string>
+  <key>NSCameraUsageDescription</key><string>Poiesis records you when you press space. Nothing leaves this computer.</string>
+  <key>NSMicrophoneUsageDescription</key><string>Poiesis records your voice when you press space. Nothing leaves this computer.</string>
 </dict></plist>
 `
 		if err := os.WriteFile(filepath.Join(b.root, "Contents", "Info.plist"), []byte(plist), 0o644); err != nil {
@@ -413,7 +413,7 @@ func writeMacApp(v *Vault) (string, error) {
 		}
 	}
 	// the window host, renamed: without this the menu bar says "Ghostty" and the camera
-	// indicator names it too, which is confusing when the app is called LOG_
+	// indicator names it too, which is confusing when the app is called Poiesis
 	if err := embedTerminal(app); err != nil {
 		return "", err
 	}
@@ -430,17 +430,17 @@ func writeMacApp(v *Vault) (string, error) {
 	stripCustomIcon(filepath.Join(app, "Contents", "Frameworks", terminalAppName))
 	_ = exec.Command("xattr", "-cr", app).Run()
 	signOrder := []string{menu, app}
-	if t := embeddedTerminal(); fileThere(t) && !signedAs(t, "app.logunderscore.terminal") {
+	if t := embeddedTerminal(); fileThere(t) && !signedAs(t, "app.poiesis.terminal") {
 		signOrder = []string{t, menu, app} // sign the terminal once; after that leave it alone
 	}
 	for _, b := range signOrder {
-		id := "app.logunderscore"
+		id := "app.poiesis"
 		args := []string{"--force", "--sign", "-", "--identifier", id, "--timestamp=none"}
 		if b == filepath.Join(app, "Contents", "Frameworks", terminalAppName) { // the window host, not the app around it
 			args = []string{"--force", "--deep", "--sign", "-", "--identifier", id + ".terminal", "--timestamp=none"}
 			say := func(string, ...any) {}
 			_ = say
-			if ent := filepath.Join(os.TempDir(), "log_-terminal-entitlements.plist"); true {
+			if ent := filepath.Join(os.TempDir(), "poiesis-terminal-entitlements.plist"); true {
 				_ = exec.Command("codesign", "-d", "--entitlements", ent, "--xml", ghosttyApp()).Run()
 				if fileThere(ent) {
 					args = append(args, "--entitlements", ent)
@@ -476,7 +476,7 @@ func setCustomIcon(bundle, png string) {
 			return
 		}
 	}
-	tmp := filepath.Join(os.TempDir(), "log_-icon-src.png")
+	tmp := filepath.Join(os.TempDir(), "poiesis-icon-src.png")
 	if err := copyInto(png, tmp, 0o644); err != nil {
 		return
 	}
@@ -488,7 +488,7 @@ func setCustomIcon(bundle, png string) {
 	if err != nil || len(rsrc) == 0 {
 		return
 	}
-	rfile := filepath.Join(os.TempDir(), "log_-icon.rsrc")
+	rfile := filepath.Join(os.TempDir(), "poiesis-icon.rsrc")
 	if err := os.WriteFile(rfile, rsrc, 0o644); err != nil {
 		return
 	}
@@ -502,14 +502,14 @@ func setCustomIcon(bundle, png string) {
 	_ = exec.Command("SetFile", "-a", "V", iconFile).Run()
 }
 
-// macMenuBinary is the helper inside LOG_.app that may hold a menu bar item.
+// macMenuBinary is the helper inside Poiesis.app that may hold a menu bar item.
 func macMenuBinary() string {
 	app := outerAppBundle()
 	if app == "" {
 		home, _ := os.UserHomeDir()
-		app = filepath.Join(home, "Applications", "LOG_.app")
+		app = filepath.Join(home, "Applications", "Poiesis.app")
 	}
-	return filepath.Join(app, "Contents", "Library", "LoginItems", "LOG_ Menu.app", "Contents", "MacOS", "log_")
+	return filepath.Join(app, "Contents", "Library", "LoginItems", "Poiesis Menu.app", "Contents", "MacOS", "poiesis")
 }
 
 func copyInto(src, dst string, mode os.FileMode) error {
@@ -529,9 +529,9 @@ func humanMB(n int64) string {
 	return fmt.Sprintf("%.0f MB", mb)
 }
 
-const terminalAppName = "LOG_.app"
+const terminalAppName = "Poiesis.app"
 
-// embeddedTerminal is the window host inside LOG_.app.
+// embeddedTerminal is the window host inside Poiesis.app.
 func embeddedTerminal() string {
 	app := outerAppBundle()
 	if app == "" {
@@ -540,16 +540,16 @@ func embeddedTerminal() string {
 	return filepath.Join(app, "Contents", "Frameworks", terminalAppName)
 }
 
-// outerAppBundle finds LOG_.app: around the running binary when it is inside it (wherever
+// outerAppBundle finds Poiesis.app: around the running binary when it is inside it (wherever
 // the person put the app), else in ~/Applications or /Applications.
 func outerAppBundle() string {
 	if self, err := os.Executable(); err == nil {
-		if i := strings.Index(self, "/LOG_.app/"); i >= 0 {
-			return self[:i+len("/LOG_.app")]
+		if i := strings.Index(self, "/Poiesis.app/"); i >= 0 {
+			return self[:i+len("/Poiesis.app")]
 		}
 	}
 	home, _ := os.UserHomeDir()
-	for _, p := range []string{filepath.Join(home, "Applications", "LOG_.app"), "/Applications/LOG_.app"} {
+	for _, p := range []string{filepath.Join(home, "Applications", "Poiesis.app"), "/Applications/Poiesis.app"} {
 		if fileThere(p) {
 			return p
 		}
@@ -574,8 +574,8 @@ func fileThere(p string) bool {
 	return err == nil
 }
 
-// embedTerminal copies the terminal that draws the window into LOG_.app and renames it, so
-// macOS shows LOG_ everywhere: the menu bar, the camera indicator, the permission prompts.
+// embedTerminal copies the terminal that draws the window into Poiesis.app and renames it, so
+// macOS shows Poiesis everywhere: the menu bar, the camera indicator, the permission prompts.
 // The terminal is Ghostty, MIT licensed; its notice travels with the copy.
 func embedTerminal(app string) error {
 	self, _ := os.Executable()
@@ -591,7 +591,7 @@ func embedTerminal(app string) error {
 	// the app's signature, and a fresh copy would be a stranger that has to ask again
 	if fileThere(dst) && plistValue(filepath.Join(dst, "Contents", "Info.plist"), "CFBundleVersion") ==
 		plistValue(filepath.Join(src, "Contents", "Info.plist"), "CFBundleVersion") &&
-		plistValue(filepath.Join(dst, "Contents", "Info.plist"), "CFBundleIdentifier") == "app.logunderscore.terminal" {
+		plistValue(filepath.Join(dst, "Contents", "Info.plist"), "CFBundleIdentifier") == "app.poiesis.terminal" {
 		return nil
 	}
 	_ = os.RemoveAll(dst)
@@ -600,14 +600,14 @@ func embedTerminal(app string) error {
 	}
 	plist := filepath.Join(dst, "Contents", "Info.plist")
 	for _, kv := range [][2]string{
-		{"CFBundleName", "LOG_"},
-		{"CFBundleDisplayName", "LOG_"},
-		{"CFBundleIdentifier", "app.logunderscore.terminal"},
+		{"CFBundleName", "Poiesis"},
+		{"CFBundleDisplayName", "Poiesis"},
+		{"CFBundleIdentifier", "app.poiesis.terminal"},
 		{"CFBundleShortVersionString", version},
 		{"CFBundleVersion", version + "." + fmt.Sprint(time.Now().Unix())},
-		{"NSCameraUsageDescription", "LOG_ records you when you press space. The video stays on this computer."},
-		{"NSMicrophoneUsageDescription", "LOG_ records your voice when you press space. The audio stays on this computer."},
-		{"NSDocumentsFolderUsageDescription", "LOG_ keeps your entries in a folder in Documents. It reads and writes only that folder."},
+		{"NSCameraUsageDescription", "Poiesis records you when you press space. The video stays on this computer."},
+		{"NSMicrophoneUsageDescription", "Poiesis records your voice when you press space. The audio stays on this computer."},
+		{"NSDocumentsFolderUsageDescription", "Poiesis keeps your entries in a folder in Documents. It reads and writes only that folder."},
 		{"SUEnableAutomaticChecks", "false"},
 		{"SUAutomaticallyUpdate", "false"},
 		{"SUAllowsAutomaticUpdates", "false"},
@@ -625,21 +625,21 @@ func embedTerminal(app string) error {
 	for _, k := range []string{"SUFeedURL", "SUUpdateDriver"} {
 		_ = exec.Command("/usr/libexec/PlistBuddy", "-c", "Delete :"+k, plist).Run()
 	}
-	// the Dock shows the running window host: give it LOG_'s icon, not the terminal's
-	if icns := filepath.Join(filepath.Dir(self), "assets", "LOG_.icns"); fileThere(icns) {
-		_ = copyInto(icns, filepath.Join(dst, "Contents", "Resources", "LOG_.icns"), 0o644)
-		_ = exec.Command("/usr/libexec/PlistBuddy", "-c", "Set :CFBundleIconFile LOG_", plist).Run()
+	// the Dock shows the running window host: give it Poiesis's icon, not the terminal's
+	if icns := filepath.Join(filepath.Dir(self), "assets", "Poiesis.icns"); fileThere(icns) {
+		_ = copyInto(icns, filepath.Join(dst, "Contents", "Resources", "Poiesis.icns"), 0o644)
+		_ = exec.Command("/usr/libexec/PlistBuddy", "-c", "Set :CFBundleIconFile Poiesis", plist).Run()
 		_ = os.Remove(filepath.Join(dst, "Contents", "Resources", "Assets.car")) // the old icon catalogue would win otherwise
 		_ = os.Remove(filepath.Join(dst, "Contents", "Resources", "Ghostty.icns"))
 		_ = exec.Command("/usr/libexec/PlistBuddy", "-c", "Delete :CFBundleIconName", plist).Run()
 	}
-	// the terminal's Dock tile plug-in is not needed (LOG_ sets its icon itself) and makes
+	// the terminal's Dock tile plug-in is not needed (Poiesis sets its icon itself) and makes
 	// macOS announce "a Dock tile plug-in was added"
 	_ = os.RemoveAll(filepath.Join(dst, "Contents", "PlugIns"))
 	if png := filepath.Join(filepath.Dir(self), "assets", "icon.png"); fileThere(png) {
 		_ = copyInto(png, filepath.Join(app, "Contents", "Resources", "icon.png"), 0o644)
 	}
-	notice := `LOG_ draws its window with Ghostty, a terminal by Mitchell Hashimoto,
+	notice := `Poiesis draws its window with Ghostty, a terminal by Mitchell Hashimoto,
 used here under the MIT license and renamed so that macOS shows this app's
 own name in the menu bar and in the camera indicator. Source and license:
 https://github.com/ghostty-org/ghostty

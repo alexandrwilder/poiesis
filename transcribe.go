@@ -82,7 +82,7 @@ func Transcribe(v *Vault, m *Media, wav string, names string) (*Transcript, erro
 		modelPath, vadPath = filepath.Join(dir, modelFile), filepath.Join(dir, v.Config.VADModel)
 	}
 	if modelPath == "" {
-		return nil, fmt.Errorf("model files %s and %s not found in %s or %s (run `log_ setup --swedish`, or set models_dir in config.json / LOG_MODELS)", modelFile, v.Config.VADModel, dirs[0], dirs[1])
+		return nil, fmt.Errorf("model files %s and %s not found in %s or %s (run `poiesis setup --swedish`, or set models_dir in config.json / POIESIS_MODELS)", modelFile, v.Config.VADModel, dirs[0], dirs[1])
 	}
 	modelName := strings.TrimSuffix(modelFile, ".bin")
 	base := strings.TrimSuffix(v.Path(m.Path), filepath.Ext(m.Path)) + ".words." + modelName + "." + lang
@@ -117,14 +117,14 @@ func Transcribe(v *Vault, m *Media, wav string, names string) (*Transcript, erro
 			}
 			var out2 []byte
 			out2, err = runReporting("transcribing", whisperCmd(v, noVAD))
-			out = append(out, []byte("\n[log_] voice detection failed ("+err.Error()+"); retried without it (silence hallucinations possible)\n")...)
+			out = append(out, []byte("\n[poiesis] voice detection failed ("+err.Error()+"); retried without it (silence hallucinations possible)\n")...)
 			out = append(out, out2...)
 		}
 		if err != nil {
 			// whisper.cpp 1.8.4 with the Homebrew ggml Metal backend can abort in a destructor
 			// at process exit after writing its output. Accept the run if the JSON is complete.
 			if b, rerr := os.ReadFile(cache); rerr == nil && json.Valid(b) {
-				out = append(out, []byte("\n[log_] whisper-cli exited with an error after writing its output; output accepted: "+err.Error()+"\n")...)
+				out = append(out, []byte("\n[poiesis] whisper-cli exited with an error after writing its output; output accepted: "+err.Error()+"\n")...)
 			} else {
 				return nil, fmt.Errorf("whisper-cli: %w\n%s", err, tail(string(out), 1200))
 			}

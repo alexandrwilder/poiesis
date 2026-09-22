@@ -1,8 +1,8 @@
-# What LOG_ is made of
+# What Poiesis is made of
 
-LOG_ is AGPL-3.0 (see `LICENSE`). The vault format (`SCHEMA.md`, `docs/FORMAT.md`) and the
+Poiesis is AGPL-3.0 (see `LICENSE`). The vault format (`SCHEMA.md`, `docs/FORMAT.md`) and the
 AI connection (`mcp.go`) are MIT (see `LICENSES/MIT.txt`), so that any tool may read and
-write LOG_ vaults.
+write Poiesis vaults.
 
 ## Inside the Mac app
 
@@ -12,9 +12,9 @@ app. Their licences travel with them; here is the list.
 
 | what | why | licence | source |
 |---|---|---|---|
-| Ghostty | the window: a terminal that draws real pixels under text, shipped renamed so macOS shows LOG_'s name | MIT, © Mitchell Hashimoto | github.com/ghostty-org/ghostty |
+| Ghostty | the window: a terminal that draws real pixels under text, shipped renamed so macOS shows Poiesis's name | MIT, © Mitchell Hashimoto | github.com/ghostty-org/ghostty |
 | ffmpeg, ffprobe | recording the camera, reading video | GPL-2.0-or-later as built by Homebrew (it includes x264) | ffmpeg.org |
-| the libraries ffmpeg loads | codecs and formats | each its own: x264 (GPL), libvpx (BSD), opus (BSD), lame (LGPL), and others; the exact files are in `LOG_.app/Contents/Frameworks/lib` | |
+| the libraries ffmpeg loads | codecs and formats | each its own: x264 (GPL), libvpx (BSD), opus (BSD), lame (LGPL), and others; the exact files are in `Poiesis.app/Contents/Frameworks/lib` | |
 | whisper.cpp, ggml | speech to text | MIT, © Georgi Gerganov | github.com/ggml-org/whisper.cpp |
 | Ollama | runs the local AI model | MIT | github.com/ollama/ollama |
 
@@ -35,4 +35,4 @@ Linux); godbus (BSD-2); golang.org/x/sys (BSD-3); yaml.v3 (MIT and Apache-2.0).
 
 ## Colours and names
 
-The themes and looks are LOG_'s own. The wordmark and the icon are LOG_'s own.
+The themes and looks are Poiesis's own. The wordmark and the icon are Poiesis's own.

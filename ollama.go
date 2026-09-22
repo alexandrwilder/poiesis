@@ -14,9 +14,9 @@ import (
 	"time"
 )
 
-// The local AI, part of the install: LOG_ carries the Ollama runtime inside the app and
+// The local AI, part of the install: Poiesis carries the Ollama runtime inside the app and
 // starts it when an entry needs extracting. The model itself (2.5 GB) is fetched once, on
-// first use, into the app's own folder, so an update of LOG_ never fetches it again.
+// first use, into the app's own folder, so an update of Poiesis never fetches it again.
 // If a person already runs their own Ollama, that one is used and nothing is started.
 
 var ollamaChild *exec.Cmd
@@ -53,7 +53,7 @@ func ensureOllama(v *Vault, model string) error {
 	return fmt.Errorf("the local AI did not answer within ten seconds (see ollama.log in the app's folder)")
 }
 
-// stopOllama ends a runtime LOG_ started itself. Someone else's is left alone.
+// stopOllama ends a runtime Poiesis started itself. Someone else's is left alone.
 func stopOllama() {
 	if ollamaChild != nil && ollamaChild.Process != nil {
 		_ = ollamaChild.Process.Kill()

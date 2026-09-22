@@ -6,7 +6,7 @@ examples. The contract the app follows is `SCHEMA.md` inside the vault itself.
 
 ## The folder
 
-    LOG_ Vault/
+    Poiesis Vault/
       config.json                 settings: language, extractor, theme, entry limit …
       _index.md                   the map of the vault, rewritten after every entry
       _log.md                     what the app did, one line per action, never edited
@@ -76,7 +76,7 @@ One line of `episodes/2026-09-02-a.claims.jsonl`:
 - `stated_at` is when it was said; `extracted_at` and `extractor` say who wrote it down
   and when. Two times, so a re-extraction is never confused with a new statement.
 - `supersedes` points at an older claim this one replaces. Nothing is deleted.
-- `source` is the moment: the entry and the seconds. `log://2026-09-02-a?t=6.4` plays it.
+- `source` is the moment: the entry and the seconds. `poiesis://2026-09-02-a?t=6.4` plays it.
 
 ## A page for a person or thing
 
@@ -93,7 +93,7 @@ One line of `episodes/2026-09-02-a.claims.jsonl`:
     # Erik
     person · 6 claims · 2026-09-01 → 2026-09-02
     ## Timeline
-    - 2026-09-02 · **event** · I will meet Erik tomorrow … — "Imorgon träffar jag Erik …" · [[2026-09-02-a]] [00:06](log://2026-09-02-a?t=6.4)
+    - 2026-09-02 · **event** · I will meet Erik tomorrow … — "Imorgon träffar jag Erik …" · [[2026-09-02-a]] [00:06](poiesis://2026-09-02-a?t=6.4)
 
 Kinds: person, project, mission, theme, place, org, habit. Missions are entities too:
 `entities/bageriet.md` lists every entry recorded under it. The special page `self`
@@ -116,8 +116,8 @@ In Python, `json.loads` per line and `yaml` for the page headers is all it takes
 
 ## Reading it from an AI
 
-`log_ mcp` serves the vault to any AI app that speaks MCP, on your machine, read-only.
-`log_ setup --mcp` connects Claude Code in one step; `log_ mcp --connect` prints the lines
+`poiesis mcp` serves the vault to any AI app that speaks MCP, on your machine, read-only.
+`poiesis setup --mcp` connects Claude Code in one step; `poiesis mcp --connect` prints the lines
 for Claude Desktop and Cursor. Four verbs:
 
 | verb | what it gives | when to use it |

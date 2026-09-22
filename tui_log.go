@@ -309,7 +309,7 @@ func (m *tuiModel) viewLog() string {
 	st.rowsTop = 3
 
 	if n := m.data.orphans; n > 0 {
-		b.WriteString(sAmber.Render(fmt.Sprintf("  %d recording(s) never became entries", n)) + sDim.Render("  ·  in a terminal:  log_ ingest --orphans") + "\n\n")
+		b.WriteString(sAmber.Render(fmt.Sprintf("  %d recording(s) never became entries", n)) + sDim.Render("  ·  in a terminal:  poiesis ingest --orphans") + "\n\n")
 		st.rowsTop += 2
 	}
 	if len(st.rows) == 0 {

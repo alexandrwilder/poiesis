@@ -23,7 +23,7 @@ Read this once. Everything in the vault follows it.
 - episode id: date plus a letter, e.g. 2026-09-02-a. Wikilink: [[2026-09-02-a]]
 - entity id: lowercase slug, e.g. erik, bageriet-uppsala. Wikilink: [[erik]]
 - claim id: clm:<ULID>, time-sortable, never reused
-- a moment: log://<episode>?t=<seconds>  (in the pages: [01:03](log://2026-09-02-a?t=63.2))
+- a moment: poiesis://<episode>?t=<seconds>  (in the pages: [01:03](poiesis://2026-09-02-a?t=63.2))
 
 Time is the join key: every episode has recorded_at with a time zone; every claim carries
 stated_at (copied from its episode) and source.start/end in seconds.

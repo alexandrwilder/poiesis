@@ -7,10 +7,10 @@ import (
 )
 
 // TestCapture records three seconds from the real camera and microphone. It only runs
-// when LOG_CAPTURE_TEST=1 because it needs a camera and asks macOS for permission.
+// when POIESIS_CAPTURE_TEST=1 because it needs a camera and asks macOS for permission.
 func TestCapture(t *testing.T) {
-	if os.Getenv("LOG_CAPTURE_TEST") == "" {
-		t.Skip("set LOG_CAPTURE_TEST=1 to record three seconds from the camera")
+	if os.Getenv("POIESIS_CAPTURE_TEST") == "" {
+		t.Skip("set POIESIS_CAPTURE_TEST=1 to record three seconds from the camera")
 	}
 	dir := t.TempDir()
 	v, err := OpenVault(dir)

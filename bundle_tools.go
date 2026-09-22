@@ -9,7 +9,7 @@ import (
 )
 
 // The tools inside the app: ffmpeg, ffprobe and whisper-cli with every library they need,
-// copied into LOG_.app and rewired to find each other there, so the other Mac needs
+// copied into Poiesis.app and rewired to find each other there, so the other Mac needs
 // nothing installed. findTool looks here first.
 
 var bundledToolNames = []string{"ffmpeg", "ffprobe", "whisper-cli", "ollama"}
@@ -204,7 +204,7 @@ func resolveRPath(file, dep string) string {
 
 // systemTool finds a program outside the app: the search path, then the package managers.
 func systemTool(name string) string {
-	if p, err := exec.LookPath(name); err == nil && !strings.Contains(p, "/LOG_.app/") {
+	if p, err := exec.LookPath(name); err == nil && !strings.Contains(p, "/Poiesis.app/") {
 		return p
 	}
 	for _, dir := range []string{"/opt/homebrew/bin", "/usr/local/bin", "/opt/local/bin", "/opt/homebrew/opt/ollama/bin"} {

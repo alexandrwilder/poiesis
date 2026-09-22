@@ -41,13 +41,13 @@ func (m *tuiModel) cacheStreak() {
 	_ = os.WriteFile(filepath.Join(appStateDir(), "streak.txt"), []byte(m.streakText(false)), 0o644)
 }
 
-// traceKey appends every key to ~/Library/Logs/LOG_keys.log when LOG_DEBUG_KEYS=1, to see
+// traceKey appends every key to ~/Library/Logs/Poiesis-keys.log when POIESIS_DEBUG_KEYS=1, to see
 // what a terminal sends the app on its own.
 func traceKey(k tea.KeyMsg) {
-	if os.Getenv("LOG_DEBUG_KEYS") != "1" {
+	if os.Getenv("POIESIS_DEBUG_KEYS") != "1" {
 		return
 	}
-	f, err := os.OpenFile(filepath.Join(os.Getenv("HOME"), "Library", "Logs", "LOG_keys.log"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	f, err := os.OpenFile(filepath.Join(os.Getenv("HOME"), "Library", "Logs", "Poiesis-keys.log"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
 		return
 	}

@@ -17,12 +17,12 @@ func trayRunNative(root string) error {
 		} else {
 			systray.SetIcon(trayColour)
 		}
-		systray.SetTitle("LOG_")
-		systray.SetTooltip("LOG_")
+		systray.SetTitle("Poiesis")
+		systray.SetTooltip("Poiesis")
 		streak := systray.AddMenuItem(trayStreak(root), "")
 		streak.Disable()
 		systray.AddSeparator()
-		open := systray.AddMenuItem("Open LOG_", "the log in its own window")
+		open := systray.AddMenuItem("Open Poiesis", "the log in its own window")
 		record := systray.AddMenuItem("Record now", "open straight on the record screen")
 		systray.AddSeparator()
 		quit := systray.AddMenuItem("Quit", "")

@@ -55,7 +55,7 @@ type tuiModel struct {
 	width      int
 	height     int
 	status     string // one line at the bottom, transient
-	startOnLog bool   // open on the log page instead of the record screen (log_ ui --log)
+	startOnLog bool   // open on the log page instead of the record screen (poiesis ui --log)
 	fullWindow bool   // the last record view painted the whole window itself
 	focused    bool   // the window is in front; when it is not, the camera rests
 
@@ -481,7 +481,7 @@ func cameraProblem(err error) string {
 	low := strings.ToLower(msg)
 	switch {
 	case strings.Contains(low, "not permitted") || strings.Contains(low, "denied") || strings.Contains(low, "permission"):
-		return "the camera is blocked: allow LOG_ in System Settings › Privacy & Security › Camera, then press v"
+		return "the camera is blocked: allow Poiesis in System Settings › Privacy & Security › Camera, then press v"
 	case strings.Contains(low, "could not find") || strings.Contains(low, "no such"):
 		return "no camera found: check the capture device in config.json"
 	}

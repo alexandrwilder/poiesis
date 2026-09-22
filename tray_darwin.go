@@ -42,7 +42,7 @@ static void trayRun(const char *streak, const void *iconBytes, int iconLen) {
     // no text: the narrowest possible item, so a crowded menu bar can still fit it
     gTray.item.length = NSSquareStatusItemLength;
     gTray.item.behavior = NSStatusItemBehaviorTerminationOnRemoval;
-    gTray.item.autosaveName = @"LOG_menu";
+    gTray.item.autosaveName = @"Poiesis-menu";
     [gTray.item setVisible:YES];
 
     NSMenu *menu = [[NSMenu alloc] init];
@@ -50,7 +50,7 @@ static void trayRun(const char *streak, const void *iconBytes, int iconLen) {
     [gStreak setEnabled:NO];
     [menu addItem:gStreak];
     [menu addItem:[NSMenuItem separatorItem]];
-    NSMenuItem *o = [[NSMenuItem alloc] initWithTitle:@"Open LOG_" action:@selector(openLog:) keyEquivalent:@""];
+    NSMenuItem *o = [[NSMenuItem alloc] initWithTitle:@"Open Poiesis" action:@selector(openLog:) keyEquivalent:@""];
     o.target = gTray; [menu addItem:o];
     NSMenuItem *r = [[NSMenuItem alloc] initWithTitle:@"Record now" action:@selector(recordNow:) keyEquivalent:@""];
     r.target = gTray; [menu addItem:r];
@@ -68,7 +68,7 @@ static void trayRun(const char *streak, const void *iconBytes, int iconLen) {
                 s.localizedName, r.origin.x, r.origin.y, r.size.width, r.size.height,
                 (int)NSPointInRect(NSMakePoint(NSMidX(f), NSMidY(f)), r)];
       }
-      NSString *path = [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Logs/LOG_.log"];
+      NSString *path = [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Logs/Poiesis.log"];
       NSFileHandle *fh = [NSFileHandle fileHandleForWritingAtPath:path];
       if (fh == nil) { [[NSFileManager defaultManager] createFileAtPath:path contents:nil attributes:nil]; fh = [NSFileHandle fileHandleForWritingAtPath:path]; }
       [fh seekToEndOfFile];

@@ -186,7 +186,7 @@ func stepDevice(list []avDevice, cur, dir int) int {
 	return list[i].Index
 }
 
-// moveVault points LOG_ at another folder, moving the current one there when the target
+// moveVault points Poiesis at another folder, moving the current one there when the target
 // does not exist yet. The pointer is written for every later launch.
 func (m *tuiModel) moveVault(target string) tea.Cmd {
 	if target == "" {
@@ -221,10 +221,10 @@ func (m *tuiModel) moveVault(target string) tea.Cmd {
 		m.status = "moved, but could not remember it: " + err.Error()
 	}
 	m.v = v
-	return reloadCmd(m.v, "your log now lives in "+target+"  (run `log_ setup --mcp` again for the AI connection)", "")
+	return reloadCmd(m.v, "your log now lives in "+target+"  (run `poiesis setup --mcp` again for the AI connection)", "")
 }
 
-// setVaultPointer remembers the vault for every way LOG_ can start.
+// setVaultPointer remembers the vault for every way Poiesis can start.
 func setVaultPointer(root string) error {
 	if err := os.MkdirAll(appStateDir(), 0o755); err != nil {
 		return err
@@ -335,8 +335,8 @@ func aiStatus() string {
 	if _, err := exec.LookPath("claude"); err != nil {
 		return "not connected  (Claude Code not installed; CONNECT.md has the lines for other apps)"
 	}
-	out, _ := exec.Command("claude", "mcp", "get", "log_").CombinedOutput()
-	if strings.Contains(string(out), "log_") && !strings.Contains(strings.ToLower(string(out)), "not found") {
+	out, _ := exec.Command("claude", "mcp", "get", "poiesis").CombinedOutput()
+	if strings.Contains(string(out), "poiesis") && !strings.Contains(strings.ToLower(string(out)), "not found") {
 		return "Claude Code connected"
 	}
 	return "not connected  (enter)"

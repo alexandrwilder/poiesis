@@ -11,10 +11,10 @@ import (
 )
 
 // A paused entry is two parts joined into one clip. The joined clip must be about as long
-// as the parts together and carry one video and one audio stream. LOG_CAPTURE_TEST=1 to run.
+// as the parts together and carry one video and one audio stream. POIESIS_CAPTURE_TEST=1 to run.
 func TestPauseJoin(t *testing.T) {
-	if os.Getenv("LOG_CAPTURE_TEST") != "1" {
-		t.Skip("needs a camera; run with LOG_CAPTURE_TEST=1")
+	if os.Getenv("POIESIS_CAPTURE_TEST") != "1" {
+		t.Skip("needs a camera; run with POIESIS_CAPTURE_TEST=1")
 	}
 	dir := t.TempDir()
 	v, err := OpenVault(dir)

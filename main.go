@@ -1,7 +1,7 @@
-// LOG_: talk to the camera, keep your own record, let any AI read it.
+// Poiesis: talk to the camera, keep your own record, let any AI read it.
 //
-// Day-1 scope: `log_ ingest` turns a video in the inbox into an entry page,
-// a claims file and entity pages inside a plain-files vault; `log_ lint`
+// Day-1 scope: `poiesis ingest` turns a video in the inbox into an entry page,
+// a claims file and entity pages inside a plain-files vault; `poiesis lint`
 // checks that every claim is backed by the transcript.
 package main
 
@@ -53,24 +53,24 @@ func dumpScreen(m *tuiModel, name string) string {
 const version = "0.0.4-day4"
 
 func usage() {
-	fmt.Fprintf(os.Stderr, `LOG_ %s
+	fmt.Fprintf(os.Stderr, `Poiesis %s
 
 usage:
-  log_                        open the app here in the terminal (record, entries, search)
-  log_ window [--record]      open the app in its own window (Ghostty, Alacritty, kitty, WezTerm; else Terminal)
-  log_ tray [--login]         menu bar / tray item: streak, Open, Record now; --login starts it when you log in
-  log_ ingest [file ...]      process every video in <vault>/inbox, or the given files
-  log_ ingest --orphans       process recordings in raw/ that never became entries (after a crash)
-  log_ lint                   check every claim against its transcript and the entity pages
-  log_ mcp                    serve the vault to an AI over stdio: orient, search, read, moment (read-only)
-  log_ mcp --connect          print the setup lines for Claude Code, Claude Desktop and Cursor
-  log_ setup                  check tools, download the speech models (verified), set the vault and extractor
+  poiesis                        open the app here in the terminal (record, entries, search)
+  poiesis window [--record]      open the app in its own window (Ghostty, Alacritty, kitty, WezTerm; else Terminal)
+  poiesis tray [--login]         menu bar / tray item: streak, Open, Record now; --login starts it when you log in
+  poiesis ingest [file ...]      process every video in <vault>/inbox, or the given files
+  poiesis ingest --orphans       process recordings in raw/ that never became entries (after a crash)
+  poiesis lint                   check every claim against its transcript and the entity pages
+  poiesis mcp                    serve the vault to an AI over stdio: orient, search, read, moment (read-only)
+  poiesis mcp --connect          print the setup lines for Claude Code, Claude Desktop and Cursor
+  poiesis setup                  check tools, download the speech models (verified), set the vault and extractor
                              flags: --install  --swedish  --extractor ollama|claude  --mcp  --app
-  log_ ask "…"               the local AI answers a question from the log, with the moments
-  log_ schema                 print SCHEMA.md
+  poiesis ask "…"               the local AI answers a question from the log, with the moments
+  poiesis schema                 print SCHEMA.md
 
 flags (all commands):
-  --vault DIR      vault folder (default: $LOG_VAULT or ~/Documents/LOG_ Vault)
+  --vault DIR      vault folder (default: $POIESIS_VAULT or ~/Documents/Poiesis Vault)
   --lang auto|sv|en  language setting for this run (default: vault config, then auto)
   --extractor claude|ollama|file   who extracts claims (default: vault config, then claude)
   --model NAME     model for the extractor (default: claude-opus-5 / qwen3:8b)
@@ -81,7 +81,7 @@ flags (all commands):
 }
 
 func main() {
-	// `log_` alone (or with only flags) opens the terminal app
+	// `poiesis` alone (or with only flags) opens the terminal app
 	cmd := "ui"
 	rest := os.Args[1:]
 	if len(os.Args) >= 2 && !strings.HasPrefix(os.Args[1], "-") {
@@ -90,7 +90,7 @@ func main() {
 	}
 	// started by double-click: the helper holds the menu bar item, the app opens the window
 	if len(os.Args) == 1 && inMacApp() {
-		if self, _ := os.Executable(); strings.Contains(self, "LOG_ Menu.app") {
+		if self, _ := os.Executable(); strings.Contains(self, "Poiesis Menu.app") {
 			cmd = "tray"
 		} else {
 			cmd = "window"
@@ -110,7 +110,7 @@ func main() {
 	setupInstall := fs.Bool("install", false, "with setup: run the package manager and ollama pull")
 	setupSwedish := fs.Bool("swedish", false, "with setup: also download the Swedish-only speech model")
 	setupMCP := fs.Bool("mcp", false, "with setup: let Claude Code read this vault")
-	setupApp := fs.Bool("app", false, "with setup: make ~/Applications/LOG_.app (macOS)")
+	setupApp := fs.Bool("app", false, "with setup: make ~/Applications/Poiesis.app (macOS)")
 	startRecord := fs.Bool("record", false, "with ui/window: open on the record screen (the default)")
 	startLog := fs.Bool("log", false, "with ui: open on the log page instead of the record screen")
 	trayLogin := fs.Bool("login", false, "with tray: start at login")
@@ -235,7 +235,7 @@ func main() {
 	case "ask":
 		q := strings.Join(fs.Args(), " ")
 		if q == "" {
-			fmt.Fprintln(os.Stderr, "log_ ask \"what did I say about the bakery?\"")
+			fmt.Fprintln(os.Stderr, "poiesis ask \"what did I say about the bakery?\"")
 			os.Exit(2)
 		}
 		d, err := loadTUIData(v)
@@ -249,7 +249,7 @@ func main() {
 		fmt.Println(a)
 		return
 	case "version":
-		fmt.Println("log_ " + version)
+		fmt.Println("poiesis " + version)
 		return
 	case "schema":
 		fmt.Print(schemaMD)
@@ -260,9 +260,9 @@ func main() {
 }
 
 func fail(err error) {
-	fmt.Fprintln(os.Stderr, "log_:", err)
+	fmt.Fprintln(os.Stderr, "poiesis:", err)
 	if inMacApp() {
-		// opened from LOG_.app: hold the window open so the message can be read
+		// opened from Poiesis.app: hold the window open so the message can be read
 		fmt.Fprintln(os.Stderr, "\npress enter to close")
 		fmt.Fscanln(os.Stdin)
 	}
@@ -270,7 +270,7 @@ func fail(err error) {
 }
 
 func defaultVaultDir() string {
-	if d := os.Getenv("LOG_VAULT"); d != "" {
+	if d := os.Getenv("POIESIS_VAULT"); d != "" {
 		return d
 	}
 	if b, err := os.ReadFile(filepath.Join(appStateDir(), "vault.txt")); err == nil {
@@ -279,7 +279,7 @@ func defaultVaultDir() string {
 		}
 	}
 	home, _ := os.UserHomeDir()
-	return filepath.Join(home, "Documents", "LOG_ Vault")
+	return filepath.Join(home, "Documents", "Poiesis Vault")
 }
 
 // humanize turns an entity id into a display name: "familjetapeter" -> "Familjetapeter".
