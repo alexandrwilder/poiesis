@@ -193,6 +193,12 @@ func startCapture(v *Vault, opts captureOptions) (*capture, error) {
 	return c, nil
 }
 
+// picture is the preview's frames, which the core draws itself on this path.
+func (c *capture) picture() *reflection { return c.refl }
+
+// ended receives when ffmpeg stops on its own.
+func (c *capture) ended() <-chan error { return c.done }
+
 // level returns the current audio level as 0..1 for a bar: a quiet room measures around
 // -70 dB RMS, normal speech around -30 to -20, so the bar runs from -60 (empty) to -10 (full).
 func (c *capture) level() float64 {

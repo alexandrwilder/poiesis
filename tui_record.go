@@ -22,7 +22,7 @@ type recordState struct {
 	mission        textinput.Model
 	picker         missionPicker
 	phase          string // ready | recording | paused
-	cap            *capture
+	cap            camera // ffmpeg or a host (camera.go)
 	parts          []string
 	recorded       time.Duration // finished parts
 	confirmDiscard bool
@@ -121,7 +121,7 @@ func (m *tuiModel) startPreview() {
 		return
 	}
 	w, h := m.previewSize()
-	if c, err := startCapture(m.v, captureOptions{PreviewW: w, PreviewH: h, PreviewFPS: m.previewFPS()}); err == nil {
+	if c, err := openCamera(m.v, captureOptions{PreviewW: w, PreviewH: h, PreviewFPS: m.previewFPS()}); err == nil {
 		m.record.cap = c
 	} else {
 		m.record.lastErr = "no preview: " + err.Error()
@@ -277,7 +277,7 @@ func (m *tuiModel) startPart() bool {
 	dir := m.v.Path("inbox", ".parts")
 	_ = os.MkdirAll(dir, 0o755)
 	out := filepath.Join(dir, fmt.Sprintf("%s.part%02d.mp4", time.Now().Format("2006-01-02T15-04-05"), len(st.parts)+1))
-	c, err := startCapture(m.v, captureOptions{Record: true, Out: out, PreviewW: w, PreviewH: h, PreviewFPS: m.previewFPS()})
+	c, err := openCamera(m.v, captureOptions{Record: true, Out: out, PreviewW: w, PreviewH: h, PreviewFPS: m.previewFPS()})
 	if err != nil {
 		st.lastErr = err.Error()
 		m.status = st.lastErr
@@ -499,8 +499,12 @@ func (m *tuiModel) viewRecord() string {
 	st := &m.record
 	overlays := m.recordOverlays()
 	// with a picture: edge to edge, the frame painted over it
-	if m.reflectionOn() && st.cap != nil && st.cap.refl != nil {
-		if f := st.cap.refl.snapshot(); f != nil {
+	var refl *reflection
+	if st.cap != nil {
+		refl = st.cap.picture()
+	}
+	if m.reflectionOn() && refl != nil {
+		if f := refl.snapshot(); f != nil {
 			W, H := max(20, m.width), max(5, m.height)
 			all := make([]overlayText, 0, len(overlays)+H+2)
 			for _, o := range overlays {
@@ -512,15 +516,15 @@ func (m *tuiModel) viewRecord() string {
 				// real pixels under the text; the title bar takes the picture's top colour.
 				// The picture is sent only when the camera has a new frame or the window
 				// changed shape; the terminal keeps showing the last one meanwhile.
-				tint := windowTint(edgeColorClear(f, st.cap.refl.w, st.cap.refl.h))
-				got := st.cap.refl.frames()
+				tint := windowTint(edgeColorClear(f, refl.w, refl.h))
+				got := refl.frames()
 				img := ""
 				if m.focused && (got != st.sentFrame || W != st.sentW || H != st.sentH) {
 					// a still scene sends nothing: only when the picture has moved since the
 					// last frame that was actually sent, or the window changed shape
 					if W != st.sentW || H != st.sentH || frameMoved(st.lastSent, f) {
 						shown := applyLook(currentLook, currentStrength, f)
-						img = kittyFrame(shown, st.cap.refl.w, st.cap.refl.h, W, H)
+						img = kittyFrame(shown, refl.w, refl.h, W, H)
 						st.lastSent = append(st.lastSent[:0], f...)
 						st.sentW, st.sentH = W, H
 					}
@@ -528,8 +532,8 @@ func (m *tuiModel) viewRecord() string {
 				}
 				return tint + img + renderTextOver(W, H, all)
 			}
-			tint := windowTint(edgeColor(f, st.cap.refl.w, st.cap.refl.h, m.v.Config.Reflection))
-			return tint + renderReflection(f, st.cap.refl.w, st.cap.refl.h, W, H, m.v.Config.Reflection, all)
+			tint := windowTint(edgeColor(f, refl.w, refl.h, m.v.Config.Reflection))
+			return tint + renderReflection(f, refl.w, refl.h, W, H, m.v.Config.Reflection, all)
 		}
 	}
 	m.fullWindow = false

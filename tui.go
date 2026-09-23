@@ -167,7 +167,7 @@ func (m *tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// a camera that stops on its own (blocked, unplugged) must say so, not go black
 		if c := m.record.cap; c != nil && m.record.phase == "ready" {
 			select {
-			case err := <-c.done:
+			case err := <-c.ended():
 				m.record.cap = nil
 				m.record.lastErr = cameraProblem(err)
 			default:
