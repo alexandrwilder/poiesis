@@ -235,7 +235,7 @@ func (v *Vault) ResolveEntity(name string) string {
 
 var nonSlug = regexp.MustCompile(`[^a-z0-9]+`)
 
-// slugify: "Familjetapeter AB" -> "familjetapeter-ab", "Uppsala" -> "uppsala".
+// slugify: "Stora Bageriet AB" -> "stora-bageriet-ab", "Uppsala" -> "uppsala".
 func slugify(s string) string {
 	s = strings.ToLower(strings.TrimSpace(s))
 	s = strings.NewReplacer("å", "a", "ä", "a", "ö", "o", "é", "e", "ü", "u", "ø", "o", "æ", "ae").Replace(s)

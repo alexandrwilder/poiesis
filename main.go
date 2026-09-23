@@ -305,7 +305,7 @@ func defaultVaultDir() string {
 	return filepath.Join(home, "Documents", "Poiesis Vault")
 }
 
-// humanize turns an entity id into a display name: "familjetapeter" -> "Familjetapeter".
+// humanize turns an entity id into a display name: "the-bakery" -> "The Bakery".
 func humanize(id string) string {
 	parts := strings.Split(id, "-")
 	for i, p := range parts {
