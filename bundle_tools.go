@@ -135,7 +135,7 @@ func bundleTools(app string, say func(string, ...any)) error {
 	}
 	// a changed binary must be signed again on Apple silicon
 	for _, dst := range copied {
-		if out, err := exec.Command("codesign", "--force", "--sign", "-", dst).CombinedOutput(); err != nil {
+		if out, err := exec.Command("codesign", "--force", "--sign", signIdentity(), dst).CombinedOutput(); err != nil {
 			return fmt.Errorf("signing %s: %s", filepath.Base(dst), strings.TrimSpace(string(out)))
 		}
 	}

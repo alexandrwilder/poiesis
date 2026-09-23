@@ -29,6 +29,17 @@ rm -rf "$out"
 mkdir -p "$out"
 stamp="-X main.version=$ver"
 
+# Signed with Poiesis's own certificate, so macOS keeps the app's permissions across updates.
+# Its keychain joins the search list only while this runs, then the list is put back.
+KC="$HOME/Library/Keychains/poiesis-signing.keychain-db"
+[ -f "$KC" ] || { echo "no signing identity: run hosts/mac/make-signing-identity.sh once"; exit 1; }
+keychains=$(security list-keychains -d user | tr -d '"' | xargs)
+trap 'security list-keychains -d user -s $keychains' EXIT
+# shellcheck disable=SC2086
+security list-keychains -d user -s $keychains "$KC"
+security unlock-keychain -p "$(security find-generic-password -s poiesis-signing -w)" "$KC"
+export POIESIS_SIGN_IDENTITY="Poiesis (self-signed)"
+
 echo "== the Mac host"
 hosts/mac/build.sh >/dev/null
 echo "== the Mac app and its install file"
@@ -64,6 +75,14 @@ JSON
   python3 -m json.tool release.json >/dev/null
 )
 [ "$("$out/poiesis" version)" = "poiesis $ver" ] || { echo "the Mac build says $("$out/poiesis" version), not $ver"; exit 1; }
+# the app in the install file must carry the certificate, or updates would ask for permissions again
+mnt=$(hdiutil attach -nobrowse -readonly "$out/Poiesis.dmg" | grep -o '/Volumes/.*' | head -1)
+req=$(codesign -d -r- "$mnt/Poiesis.app" 2>&1 | grep designated || true)
+hdiutil detach "$mnt" -quiet
+case "$req" in
+  *"certificate leaf"*) echo "   signed as Poiesis: $req" ;;
+  *) echo "the app is not signed with Poiesis's certificate: $req"; exit 1 ;;
+esac
 ls -l "$out/Poiesis.dmg" "$out"/poiesis_linux_*.tar.gz | awk '{print "   " $5 "  " $NF}'
 
 if [ -n "${POIESIS_RELEASE_DRY:-}" ]; then

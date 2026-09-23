@@ -455,7 +455,7 @@ func writeMacApp(app, vaultRoot string) (string, error) {
 		if b == core {
 			id = "app.poiesis.core"
 		}
-		args := []string{"--force", "--sign", "-", "--identifier", id, "--timestamp=none"}
+		args := []string{"--force", "--sign", signIdentity(), "--identifier", id, "--timestamp=none"}
 		if b == filepath.Join(app, "Contents", "Frameworks", terminalAppName) { // the window host, not the app around it
 			args = []string{"--force", "--deep", "--sign", "-", "--identifier", id + ".terminal", "--timestamp=none"}
 			say := func(string, ...any) {}
@@ -485,6 +485,17 @@ func writeMacApp(app, vaultRoot string) (string, error) {
 	_ = exec.Command("/usr/bin/touch", app).Run()
 	_ = exec.Command("/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister", "-f", app).Run()
 	return app, nil
+}
+
+// signIdentity is who signs the app: Poiesis's own certificate when the release run names it
+// (POIESIS_SIGN_IDENTITY, made by hosts/mac/make-signing-identity.sh), ad hoc otherwise. The
+// certificate gives every version the same identity, so macOS keeps camera, microphone and
+// Documents approved across updates; ad hoc, each build is a new app to macOS.
+func signIdentity() string {
+	if id := os.Getenv("POIESIS_SIGN_IDENTITY"); id != "" {
+		return id
+	}
+	return "-"
 }
 
 // macHost finds the Mac host (hosts/mac, docs/HOST.md) to put in the app: the copy already
