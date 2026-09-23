@@ -57,6 +57,7 @@ type tuiModel struct {
 	status     string // one line at the bottom, transient
 	startOnLog bool   // open on the log page instead of the record screen (poiesis ui --log)
 	fullWindow bool   // the last record view painted the whole window itself
+	update     string // a newer version the daily look found; "" when there is none
 	focused    bool   // the window is in front; when it is not, the camera rests
 
 	entries  listState
@@ -92,10 +93,10 @@ func (m *tuiModel) Init() tea.Cmd {
 	m.cacheStreak()
 	if m.startOnLog {
 		m.enterLog()
-		return watchCommandCmd()
+		return tea.Batch(watchCommandCmd(), m.startUpdateChecks())
 	}
 	// the record screen is the front door: open it, ready, camera faint
-	return tea.Batch(m.enterRecord(), watchCommandCmd())
+	return tea.Batch(m.enterRecord(), watchCommandCmd(), m.startUpdateChecks())
 }
 
 // writeWindowPID lets the menu bar item find this window instead of opening another.
@@ -125,6 +126,9 @@ func watchCommandCmd() tea.Cmd {
 }
 
 func (m *tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if cmd, ok := m.updateMsg(msg); ok {
+		return m, cmd
+	}
 	switch msg := msg.(type) {
 	case tea.FocusMsg:
 		m.focused = true
@@ -287,7 +291,7 @@ func (m *tuiModel) inner() int { return max(20, m.width-4) }
 
 // frameTop: ╭──────────────────────────── 12 days in a row · 47 days logged ─╮
 func (m *tuiModel) frameTop(inner int) string {
-	right := sRule.Render(" ") + sAccent2.Render(m.streakText(false)) + sRule.Render(" ─")
+	right := sRule.Render(" ") + sAccent2.Render(m.frameNote()) + sRule.Render(" ─")
 	fill := inner + 2 - lipgloss.Width(right)
 	if fill < 1 {
 		fill = 1

@@ -37,6 +37,7 @@ const (
 	rowLimit
 	rowVault
 	rowAI
+	rowUpdates
 	rowCount
 )
 
@@ -97,6 +98,9 @@ func (m *tuiModel) updateSettings(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if st.cursor == rowAI {
 			return m, m.connectAI()
 		}
+		if st.cursor == rowUpdates {
+			return m, m.installUpdate()
+		}
 		if st.cursor == rowVault {
 			st.moving = true
 			st.path.SetValue(m.v.Root)
@@ -145,6 +149,12 @@ func (m *tuiModel) updateSettings(msg tea.Msg) (tea.Model, tea.Cmd) {
 				s = 600
 			}
 			c.MaxEntryS = s
+		case rowUpdates:
+			if c.UpdateCheck == "off" {
+				c.UpdateCheck = "daily"
+			} else {
+				c.UpdateCheck = "off"
+			}
 		case rowVault, rowAI:
 			return m, nil
 		}
@@ -246,7 +256,11 @@ func (m *tuiModel) viewSettings() string {
 	if c.Extractor == "claude" {
 		b.WriteString(sAmber.Render("▲ your key") + sDim.Render("   the words of each entry are sent to Anthropic under your own key. video and sound never leave.") + "\n\n")
 	} else {
-		b.WriteString(sOK.Render("● local") + sDim.Render("   nothing leaves this computer. the speech model and the local AI run inside the app.") + "\n\n")
+		leaves := "nothing leaves this computer"
+		if c.UpdateCheck != "off" {
+			leaves = "nothing but a daily version check leaves this computer"
+		}
+		b.WriteString(sOK.Render("● local") + sDim.Render("   "+leaves+". the speech model and the local AI run inside the app.") + "\n\n")
 	}
 	cam, mic := splitDevice(c.CaptureDevice)
 	limit := c.MaxEntryS
@@ -273,6 +287,7 @@ func (m *tuiModel) viewSettings() string {
 		{"entry limit", mmss(float64(limit)), "an entry completes itself here"},
 		{"log folder", m.v.Root, "enter to move it"},
 		{"your AI apps", aiStatus(), "enter connects Claude Code and writes CONNECT.md in your log for Desktop and Cursor"},
+		{"updates", updatesValue(c, m.update), "daily: once a day it asks github.com for the newest version number, and sends nothing about you · enter looks now, or installs"},
 	}
 	for i, r := range rows {
 		cur, lab, val := "  ", sDim, sInk
@@ -294,6 +309,17 @@ func (m *tuiModel) viewSettings() string {
 	}
 	b.WriteString("\n" + sDim.Render("  everything here is saved as you change it, in config.json inside your log folder."))
 	return b.String()
+}
+
+// updatesValue says how Poiesis looks for updates, and what it found.
+func updatesValue(c Config, found string) string {
+	if c.UpdateCheck == "off" {
+		return "off  (" + version + ")"
+	}
+	if found != "" {
+		return "daily  ·  " + found + " is ready: enter installs it and starts Poiesis again"
+	}
+	return "daily  (" + version + ")"
 }
 
 func ollamaModelName(c Config) string {

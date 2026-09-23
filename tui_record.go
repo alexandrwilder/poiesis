@@ -583,7 +583,7 @@ func (m *tuiModel) windowOverlays(overlays []overlayText) (W, H int, all []overl
 // bottom left, thin sides.
 func frameOverlays(m *tuiModel, W, H int) []overlayText {
 	rule := rgbRule
-	streak := m.streakText(false)
+	streak := m.frameNote()
 	top := []rune("╭" + strings.Repeat("─", max(0, W-2)) + "╮")
 	tail := []rune(" " + streak + " ─╮")
 	if len(tail) < len(top) {

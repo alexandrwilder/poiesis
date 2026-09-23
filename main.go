@@ -50,7 +50,8 @@ func dumpScreen(m *tuiModel, name string) string {
 	return m.View() + "\n"
 }
 
-const version = "0.0.5"
+// version is set by the release build (-ldflags "-X main.version=…"); this is the next one
+var version = "0.0.5"
 
 func usage() {
 	fmt.Fprintf(os.Stderr, `Poiesis %s
@@ -68,6 +69,7 @@ usage:
                              flags: --install  --swedish  --extractor ollama|claude  --mcp  --app
   poiesis ask "…"               the local AI answers a question from the log, with the moments
   poiesis schema                 print SCHEMA.md
+  poiesis update                 install the newest version, the same way this copy was installed
   poiesis dmg [file]             make the Mac install file from this build (build the host first: hosts/mac/build.sh)
 
 flags (all commands):
@@ -137,6 +139,12 @@ func main() {
 	}
 	if cmd == "tray" {
 		if err := runTray(*vaultDir, *trayLogin); err != nil {
+			fail(err)
+		}
+		return
+	}
+	if cmd == "update" { // the app itself, not a vault
+		if err := runUpdate(func(f string, a ...any) { fmt.Printf(f+"\n", a...) }); err != nil {
 			fail(err)
 		}
 		return
