@@ -16,7 +16,7 @@ import (
 )
 
 // Capture records the camera and microphone straight to a file with ffmpeg, per OS,
-// at the calibrated settings: 720p, 30 fps, H.264 quality 23, AAC 128k mono.
+// at the calibrated settings: 720p, 30 fps, H.264 (see recordVideoArgs), AAC 128k mono.
 // The audio level is read from ffmpeg's own stats so the record screen can show a bar.
 
 type capture struct {
@@ -75,6 +75,18 @@ func defaultCaptureDevice() string {
 	return "0:0"
 }
 
+// recordVideoArgs is how the recording is encoded. On a Mac the hardware encoder does it:
+// with the camera, ffmpeg took 38% of a core with x264 and 12% with the hardware encoder.
+// It needs about 1.5 times the bytes of x264 for nearly the same picture (SSIM 0.981
+// against 0.984 on a near-lossless camera reference), so it gets a fixed rate, which also
+// keeps an entry's size predictable. Elsewhere x264 stays.
+func recordVideoArgs() []string {
+	if runtime.GOOS == "darwin" {
+		return []string{"-c:v", "h264_videotoolbox", "-b:v", "1000k", "-realtime", "1"}
+	}
+	return []string{"-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-pix_fmt", "yuv420p"}
+}
+
 func captureInputArgs(device string) []string {
 	switch runtime.GOOS {
 	case "darwin":
@@ -121,9 +133,9 @@ func startCapture(v *Vault, opts captureOptions) (*capture, error) {
 		if err := os.MkdirAll(filepath.Dir(out), 0o755); err != nil {
 			return nil, err
 		}
-		args = append(args, "-map", "0:v", "-map", "0:a", "-af", levelFilter,
-			"-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-pix_fmt", "yuv420p",
-			"-c:a", "aac", "-b:a", "128k", "-ac", "1", "-movflags", "+faststart", "-y", out)
+		args = append(args, "-map", "0:v", "-map", "0:a", "-af", levelFilter)
+		args = append(args, recordVideoArgs()...)
+		args = append(args, "-c:a", "aac", "-b:a", "128k", "-ac", "1", "-movflags", "+faststart", "-y", out)
 	} else {
 		// preview only: keep the level bar alive by running the audio through a null output
 		args = append(args, "-map", "0:a", "-af", levelFilter, "-f", "null", "-")
