@@ -51,7 +51,7 @@ from a terminal. Every download is checked against the release's checksums first
 ## The promise
 
 Recording, speech to text and the extraction of claims run on your computer. Two things
-reach the network: the models, downloaded once on first use, and the daily version check,
+reach the network: the models, downloaded once on first use, and the hourly version check,
 which settings can turn off. One choice sends words away: in settings you can switch
 extraction to your own Claude key; then the words of each entry are sent to Anthropic under
 your account. Video and sound never go anywhere. An AI app you connect reads the text it asks

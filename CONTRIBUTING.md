@@ -5,15 +5,22 @@ was made to be extended, and the few rules that keep it honest.
 
 ## Build and run
 
-    go build -o poiesis .            # one binary
+    go build -o poiesis .            # one binary (Go 1.26)
     go test ./...                 # the tests; some need a camera or the network:
     POIESIS_CAPTURE_TEST=1 go test -run TestCapture .       # records 3 s from the camera
     POIESIS_NET_TEST=1 go test -run TestEnsureModel .       # downloads the small model
     ./poiesis --vault ~/Documents/"Poiesis Vault Test"        # run against a test vault
-    ./poiesis setup --app                                  # on a Mac: assemble Poiesis.app
 
-Everything is Go; on a Mac the menu bar item and the window focus use a little
-Objective-C through cgo, so Xcode's command line tools are needed there.
+The window around it, per system (`docs/ARCHITECTURE.md`):
+
+    hosts/mac/build.sh             # on a Mac: the window (Swift); it also builds the core
+    ./poiesis setup --app          # then: assemble Poiesis.app with that window inside
+    hosts/mac/test.sh              # the window's contract test (uses the camera)
+    hosts/linux/test.sh            # the Linux window in Arch under Docker, on any machine
+
+The core is Go; on a Mac the menu bar item and the window focus use a little Objective-C
+through cgo, so Xcode's command line tools are needed there. A release is made by
+`release.sh` on the maintainer's Mac.
 
 ## The map of the code
 
