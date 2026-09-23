@@ -117,7 +117,7 @@ func runSetup(v *Vault, o setupOptions) error {
 
 	// 5. Mac app
 	if o.App && runtime.GOOS == "darwin" {
-		p, err := writeMacApp(v)
+		p, err := writeMacApp(filepath.Join(os.Getenv("HOME"), "Applications", "Poiesis.app"), v.Root)
 		if err != nil {
 			return err
 		}
@@ -349,19 +349,21 @@ func registerMCP(v *Vault, say func(string, ...any)) error {
 	return nil
 }
 
-// writeMacApp builds ~/Applications/Poiesis.app, the way macOS expects a small app with a
-// menu bar item: the app itself opens the log window and quits, and a helper inside it
+// writeMacApp builds Poiesis.app at app, the way macOS expects a small app with a menu bar
+// item: the app itself opens the log window, and a helper inside it
 // (Contents/Library/LoginItems/Poiesis Menu.app) holds the menu bar item and starts at login.
 // They are separate bundles on purpose: one app cannot both keep the menu bar item and be
 // launched again by double-clicking, because macOS only re-activates what is running.
 // Both carry a copy of the binary, so `poiesis setup --app` refreshes them after a rebuild.
-func writeMacApp(v *Vault) (string, error) {
+// With vaultRoot the app is for this Mac and opens that vault; without it the app is for
+// another Mac (the install file): no vault path inside, no custom Finder icon, which the
+// signature cannot seal, and not registered with this Mac's launcher.
+func writeMacApp(app, vaultRoot string) (string, error) {
 	self, err := os.Executable()
 	if err != nil {
 		return "", err
 	}
-	home := os.Getenv("HOME")
-	app := filepath.Join(home, "Applications", "Poiesis.app")
+	forThisMac := vaultRoot != ""
 	menu := filepath.Join(app, "Contents", "Library", "LoginItems", "Poiesis Menu.app")
 	icns := filepath.Join(filepath.Dir(self), "assets", "Poiesis.icns")
 	host, hostRes := macHost(self) // with the Mac host the app is its window; without it, Ghostty
@@ -382,8 +384,10 @@ func writeMacApp(v *Vault) (string, error) {
 		if err := copyInto(self, filepath.Join(macos, "poiesis"), 0o755); err != nil {
 			return "", err
 		}
-		if err := os.WriteFile(filepath.Join(res, "vault.txt"), []byte(v.Root+"\n"), 0o644); err != nil {
-			return "", err
+		if forThisMac {
+			if err := os.WriteFile(filepath.Join(res, "vault.txt"), []byte(vaultRoot+"\n"), 0o644); err != nil {
+				return "", err
+			}
 		}
 		if _, err := os.Stat(icns); err == nil {
 			_ = copyInto(icns, filepath.Join(res, "Poiesis.icns"), 0o644)
@@ -392,9 +396,10 @@ func writeMacApp(v *Vault) (string, error) {
 		if b.id != "app.poiesis" {
 			name = "Poiesis Menu"
 		}
-		exe := "poiesis"
+		exe, extra := "poiesis", b.extra
 		if b.id == "app.poiesis" && host != "" {
 			exe = "PoiesisHost"
+			extra += "  <key>LSMinimumSystemVersion</key><string>14.0</string>\n" // what the host needs
 		}
 		plist := `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -408,7 +413,7 @@ func writeMacApp(v *Vault) (string, error) {
   <key>CFBundleIconFile</key><string>Poiesis</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>NSHighResolutionCapable</key><true/>
-` + b.extra + `  <key>NSDocumentsFolderUsageDescription</key><string>Poiesis keeps your entries in a folder in Documents. It reads and writes only that folder.</string>
+` + extra + `  <key>NSDocumentsFolderUsageDescription</key><string>Poiesis keeps your entries in a folder in Documents. It reads and writes only that folder.</string>
   <key>NSCameraUsageDescription</key><string>Poiesis records you when you press space. Nothing leaves this computer.</string>
   <key>NSMicrophoneUsageDescription</key><string>Poiesis records your voice when you press space. Nothing leaves this computer.</string>
 </dict></plist>
@@ -466,6 +471,9 @@ func writeMacApp(v *Vault) (string, error) {
 			return "", fmt.Errorf("signing %s: %s", filepath.Base(b), strings.TrimSpace(string(out)))
 		}
 	}
+	if !forThisMac {
+		return app, nil
+	}
 	// the icon as a custom Finder icon too: Finder and the Dock read it straight from the
 	// bundle, past macOS's icon cache, so a new mark shows without a logout
 	if png := filepath.Join(filepath.Dir(self), "assets", "icon.png"); fileThere(png) {
@@ -515,6 +523,9 @@ func placeMacHost(app, host, res string) error {
 			if out, err := exec.Command("ditto", res, dst).CombinedOutput(); err != nil {
 				return fmt.Errorf("copying the text view's resources: %s", strings.TrimSpace(string(out)))
 			}
+			// the build leaves them read-only, and macOS cannot take the download mark off a
+			// read-only file, so the one line in the install file's read-me would stop there
+			_ = exec.Command("chmod", "-R", "u+w", dst).Run()
 		}
 	}
 	home, _ := os.UserHomeDir()

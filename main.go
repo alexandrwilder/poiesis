@@ -50,7 +50,7 @@ func dumpScreen(m *tuiModel, name string) string {
 	return m.View() + "\n"
 }
 
-const version = "0.0.4-day4"
+const version = "0.0.5"
 
 func usage() {
 	fmt.Fprintf(os.Stderr, `Poiesis %s
@@ -68,6 +68,7 @@ usage:
                              flags: --install  --swedish  --extractor ollama|claude  --mcp  --app
   poiesis ask "…"               the local AI answers a question from the log, with the moments
   poiesis schema                 print SCHEMA.md
+  poiesis dmg [file]             make the Mac install file from this build (build the host first: hosts/mac/build.sh)
 
 flags (all commands):
   --vault DIR      vault folder (default: $POIESIS_VAULT or ~/Documents/Poiesis Vault)
@@ -138,6 +139,17 @@ func main() {
 		if err := runTray(*vaultDir, *trayLogin); err != nil {
 			fail(err)
 		}
+		return
+	}
+	if cmd == "dmg" { // made from the build alone: no vault is opened
+		out := fs.Arg(0)
+		if out == "" {
+			out = "Poiesis-" + version + ".dmg"
+		}
+		if err := makeDMG(out); err != nil {
+			fail(err)
+		}
+		fmt.Println(out)
 		return
 	}
 	v, err := OpenVault(*vaultDir)
