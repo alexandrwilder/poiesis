@@ -9,7 +9,8 @@ nothing outside it may be assumed by either side.
 The host makes a local socket in the app's own state folder, readable and writable only by
 the user, and starts the core in its text view with the socket's path in the environment:
 
-    POIESIS_HOST=/Users/you/Library/Application Support/Poiesis/host.sock
+    POIESIS_HOST=/Users/you/Library/Application Support/Poiesis/host.sock   (macOS)
+    POIESIS_HOST=/run/user/1000/poiesis/host.sock                          (Linux: $XDG_RUNTIME_DIR)
 
 The core connects once, at start. Unix domain sockets work on macOS, Linux and on Windows 10
 (1803) and later. Without `POIESIS_HOST`, or when the connection fails, the core runs on its

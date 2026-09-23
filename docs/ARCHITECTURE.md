@@ -62,8 +62,9 @@ which one in settings, and steps down on its own when the machine struggles.
 
     app/            the core (Go)
     app/docs/       the vault format, this page, the host contract
+    app/hosts/contract/ the contract test every host runs: a fake core and the checks
     app/hosts/mac/      the Mac host (Swift)
-    app/hosts/linux/    the Linux host (planned)
+    app/hosts/linux/    the Linux host (C, on GTK 4, VTE and GStreamer)
     app/hosts/windows/  the Windows host (planned)
 
 ## Per system
@@ -83,5 +84,14 @@ alone: about 75 MB for GTK4 and VTE, about 320 MB for a web view host.
 
 ## Adding a system
 
-Write a host against `HOST.md`, make it pass the contract test, bundle it with the core.
-Nothing in the core changes.
+Write a host against `HOST.md`, make it pass the contract test in `hosts/contract`, bundle it
+with the core. Nothing in the core changes.
+
+## Building for another system on one machine
+
+The core builds for every system from any one of them (`GOOS=linux` or `GOOS=windows`,
+`CGO_ENABLED=0`; the Mac build needs cgo and a Mac). The Linux host is built and tested on any
+machine with Docker, a Mac included: `hosts/linux/test.sh` runs Arch Linux, as Omarchy does,
+with a headless Wayland desktop and a test picture and tone in place of the camera and the
+microphone. What that cannot show is a real camera through PipeWire; that needs a Linux
+machine.

@@ -4,3 +4,5 @@
 *.icns.tmp
 Poiesis.iconset/
 .DS_Store
+/hosts/linux/poiesis-host
+/hosts/linux/look-test

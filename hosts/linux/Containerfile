@@ -1,0 +1,12 @@
+# Arch Linux, the base Omarchy is built on, with what the Linux host needs to build and to be
+# tested without a screen or a camera: a headless Wayland desktop (sway) and a screenshot tool.
+# Built for x86-64 (docker build --platform linux/amd64), as Omarchy runs; on an Apple chip it
+# runs emulated, where pacman's download sandbox cannot start, so it is turned off here.
+FROM archlinux:base-devel
+RUN pacman -Syu --noconfirm --needed --disable-sandbox \
+      gtk4 vte4 json-glib \
+      gstreamer gst-plugins-base gst-plugins-good gst-plugins-bad gst-plugins-ugly gst-libav \
+      gst-plugin-gtk4 gst-plugin-pipewire \
+      sway grim mesa ttf-jetbrains-mono python \
+ && pacman -Scc --noconfirm \
+ && gst-inspect-1.0 > /dev/null  # GStreamer's list of its parts, made once here, not at each start
