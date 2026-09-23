@@ -151,7 +151,7 @@ func (m *tuiModel) updateSettings(msg tea.Msg) (tea.Model, tea.Cmd) {
 			c.MaxEntryS = s
 		case rowUpdates:
 			if c.UpdateCheck == "off" {
-				c.UpdateCheck = "daily"
+				c.UpdateCheck = "on"
 			} else {
 				c.UpdateCheck = "off"
 			}
@@ -258,7 +258,7 @@ func (m *tuiModel) viewSettings() string {
 	} else {
 		leaves := "nothing leaves this computer"
 		if c.UpdateCheck != "off" {
-			leaves = "nothing but a daily version check leaves this computer"
+			leaves = "nothing but an hourly version check leaves this computer"
 		}
 		b.WriteString(sOK.Render("● local") + sDim.Render("   "+leaves+". the speech model and the local AI run inside the app.") + "\n\n")
 	}
@@ -287,7 +287,7 @@ func (m *tuiModel) viewSettings() string {
 		{"entry limit", mmss(float64(limit)), "an entry completes itself here"},
 		{"log folder", m.v.Root, "enter to move it"},
 		{"your AI apps", aiStatus(), "enter connects Claude Code and writes CONNECT.md in your log for Desktop and Cursor"},
-		{"updates", updatesValue(c, m.update), "daily: once a day it asks github.com for the newest version number, and sends nothing about you · enter looks now, or installs"},
+		{"updates", updatesValue(c, m.update), "on: every hour while open it asks github.com for the newest version number, and sends nothing about you · enter looks now, or installs"},
 	}
 	for i, r := range rows {
 		cur, lab, val := "  ", sDim, sInk
@@ -317,9 +317,9 @@ func updatesValue(c Config, found string) string {
 		return "off  (" + version + ")"
 	}
 	if found != "" {
-		return "daily  ·  " + found + " is ready: enter installs it and starts Poiesis again"
+		return "on  ·  " + found + " is ready: enter installs it and starts Poiesis again"
 	}
-	return "daily  (" + version + ")"
+	return "on, every hour  (" + version + ")"
 }
 
 func ollamaModelName(c Config) string {

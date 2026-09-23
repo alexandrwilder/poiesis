@@ -36,7 +36,7 @@ type Config struct {
 	Theme         string `json:"theme"`          // ember (default) | frost | phosphor | mono | prism | dusk
 	Video         string `json:"video"`          // clear | light | styled; empty = clear, or light when the machine struggles
 	MaxEntryS     int    `json:"max_entry_s"`    // an entry stops itself after this many seconds
-	UpdateCheck   string `json:"update_check"`   // daily (default) | off: asks the release page for the newest version
+	UpdateCheck   string `json:"update_check"`   // on (default) | off: asks the release page for the newest version every hour while open
 }
 
 func defaultConfig() Config {
@@ -58,7 +58,7 @@ func defaultConfig() Config {
 		Theme:         "ember",
 		Video:         "",
 		MaxEntryS:     180,
-		UpdateCheck:   "daily",
+		UpdateCheck:   "on",
 	}
 }
 

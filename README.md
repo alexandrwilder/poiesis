@@ -28,7 +28,7 @@ Then open Poiesis. Press space, talk, press enter.
 
 ## Updates
 
-While it is open, Poiesis looks once a day whether a newer version exists: it asks the
+While it is open, Poiesis looks every hour whether a newer version exists: it asks the
 release page for the newest version number and sends nothing about you. A newer one shows in
 the frame's corner; enter on the updates row in settings installs it, the same way Poiesis
 was installed, and starts it again. Settings can turn the look off. `poiesis update` does it

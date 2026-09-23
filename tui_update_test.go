@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// The daily look happens only when the setting allows it, and at most once in most of a day.
+// The look happens only when the setting allows it, and at most once in most of an hour.
 func TestUpdateCheckFollowsTheSetting(t *testing.T) {
 	t.Setenv("HOME", t.TempDir()) // the stamp lives in the app's own folder
 	c := defaultConfig()
@@ -19,7 +19,7 @@ func TestUpdateCheckFollowsTheSetting(t *testing.T) {
 	if updateCheckDue(c) {
 		t.Fatal("with updates off it must never look")
 	}
-	c.UpdateCheck = "daily"
+	c.UpdateCheck = "daily" // what 0.0.5 wrote: still on
 	stamp := filepath.Join(appStateDir(), "update-checked")
 	if err := os.MkdirAll(filepath.Dir(stamp), 0o755); err != nil {
 		t.Fatal(err)
@@ -30,12 +30,12 @@ func TestUpdateCheckFollowsTheSetting(t *testing.T) {
 	if updateCheckDue(c) {
 		t.Fatal("it looked a moment ago; it must not look again")
 	}
-	old := time.Now().Add(-21 * time.Hour)
+	old := time.Now().Add(-61 * time.Minute)
 	if err := os.Chtimes(stamp, old, old); err != nil {
 		t.Fatal(err)
 	}
 	if !updateCheckDue(c) {
-		t.Fatal("a day later it should look again")
+		t.Fatal("an hour later it should look again")
 	}
 }
 

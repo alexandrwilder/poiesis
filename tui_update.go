@@ -9,8 +9,9 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// While the app is open it looks for a newer version once a day, when the setting allows it,
-// and says so in the frame. Installing it is the person's choice: enter on the updates row in
+// While the app is open it looks for a newer version every hour, when the setting allows it,
+// and says so in the frame. One look is a single small request (about 5 KB, a tenth of a
+// second, measured), so releases several times a day reach people within the hour. Installing it is the person's choice: enter on the updates row in
 // settings. Never during an entry: the app starts again afterwards.
 
 type updateFoundMsg struct{ version string }
@@ -26,13 +27,16 @@ type updateInstalledMsg struct {
 	err     error
 }
 
-// updateCheckDue: the setting allows a look, and the last one was most of a day ago.
+const updateEvery = time.Hour
+
+// updateCheckDue: the setting allows a look (anything but "off"; older copies wrote
+// "daily"), and the last look was most of an hour ago.
 func updateCheckDue(c Config) bool {
 	if c.UpdateCheck == "off" {
 		return false
 	}
 	st, err := os.Stat(filepath.Join(appStateDir(), "update-checked"))
-	return err != nil || time.Since(st.ModTime()) > 20*time.Hour
+	return err != nil || time.Since(st.ModTime()) > updateEvery-10*time.Minute
 }
 
 // checkUpdateCmd asks for the newest version in the background. A daily look stays quiet
@@ -52,9 +56,9 @@ func checkUpdateCmd(byHand bool) tea.Cmd {
 	}
 }
 
-// startUpdateChecks looks now when a look is due, and again every day the app stays open.
+// startUpdateChecks looks now when a look is due, and again every hour the app stays open.
 func (m *tuiModel) startUpdateChecks() tea.Cmd {
-	tick := tea.Tick(24*time.Hour, func(time.Time) tea.Msg { return updateTickMsg{} })
+	tick := tea.Tick(updateEvery, func(time.Time) tea.Msg { return updateTickMsg{} })
 	if updateCheckDue(m.v.Config) {
 		return tea.Batch(tick, checkUpdateCmd(false))
 	}
