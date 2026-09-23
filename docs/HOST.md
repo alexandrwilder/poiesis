@@ -15,6 +15,12 @@ The core connects once, at start. Unix domain sockets work on macOS, Linux and o
 (1803) and later. Without `POIESIS_HOST`, or when the connection fails, the core runs on its
 own and uses its ladders (`ARCHITECTURE.md`).
 
+The host gives the core a whole environment, not only the socket: `PATH` (the system's and the
+app's own tools), `HOME`, `LANG`, `TERM=xterm-256color`, `COLORTERM=truecolor`. The text view
+supports 24-bit colour, the alternate screen, mouse reporting, focus reporting and bracketed
+paste. Its background is transparent wherever the core draws no background colour; cells with
+their own colour stay solid.
+
 ## Messages
 
 One JSON object per line, UTF-8, both ways. Every message has a type in `t`. A side ignores
@@ -32,15 +38,26 @@ version the host answers `"version":0`, and the core goes on without the host.
 
 ## The picture (`picture`, `look`)
 
-    core → host   {"t":"picture","on":true,"look":"warm","strength":0.4,"fps":15}
+    core → host   {"t":"picture","on":true,"look":"warm","strength":0.4,
+                   "matrix":[1.03,0,0,0.01, 0,0.98,0,0, 0,0,0.89,0],"fps":15}
     core → host   {"t":"picture","on":false}
 
 On: the camera fills the window behind the text view, cropped to the window, never
-stretched. Off: the picture rests; the camera stops unless something records. `look` is a
-name from the core's list (`true`, `faded`, `warm`, `cool`, `mono`, `noir`, `sepia`, `night`,
-`vivid`) with a `strength` from 0 to 1; a host that does not know a look shows `true`. `fps`
-is a wish; the host picks the nearest rate its camera offers. The text view's own background
-is transparent, so the picture shows wherever the core draws no background colour.
+stretched. Off: the picture rests; the camera stops unless something records. `fps` is a
+wish; the host picks the nearest rate its camera offers.
+
+`matrix` is the look: three rows for red, green and blue, each the weights of red, green
+and blue and an offset, on a 0..1 scale, the result clamped to 0..1. Every graphics system
+applies such a matrix (Core Image, GTK, a web view's colour matrix filter), so a host never
+needs to know a look by name, and a new look in the core reaches every host at once. `look`
+and `strength` are its name, for showing. A host that cannot apply a matrix shows the camera
+as it is. The look changes only what is shown, never the recording.
+
+## One owner for the camera
+
+A host that says `picture` should also say `record`. On Linux and Windows a camera usually
+serves one program at a time, so the host keeps the camera and records from the same capture;
+the core never opens the camera while a host holds it.
 
 ## The recording (`record`)
 

@@ -120,6 +120,8 @@ func TestHostContractCoreSide(t *testing.T) {
 	}
 	if m := next(t, got); m["t"] != "picture" || m["on"] != true || m["look"] != currentLook.Name || m["fps"] != 15.0 {
 		t.Fatalf("got %v, want the picture on with the look and 15 fps", m)
+	} else if mx, ok := m["matrix"].([]any); !ok || len(mx) != 12 {
+		t.Fatalf("got matrix %v, want the look as twelve numbers", m["matrix"])
 	}
 	deadline := time.Now().Add(2 * time.Second)
 	for c.level() != meterFromDB(-35) && time.Now().Before(deadline) {

@@ -38,7 +38,7 @@ which one in settings, and steps down on its own when the machine struggles.
 
 | what | ladder, best first |
 |---|---|
-| the picture | drawn by the host → terminal graphics (the kitty protocol) → a picture in characters → off |
+| the picture | drawn by the host → terminal graphics (the kitty protocol; sixel planned, for Foot and Windows Terminal) → a picture in characters → off |
 | the recording | made by the host with the system encoder → ffmpeg with a hardware encoder → ffmpeg in software |
 | the words | the language heard first, then the model for it (`language.go`) → the general model |
 
@@ -49,6 +49,10 @@ which one in settings, and steps down on its own when the machine struggles.
   the truth every page is rebuilt from.
 - The core runs without a host, in any terminal, on every system; a host only makes it better.
 - A host holds no log logic.
+- A camera has one owner: the host that shows it also records it.
+- A look is a colour matrix, defined once in the core and applied by every host.
+- The app follows the desktop it lives in: on Omarchy the theme comes from the desktop's own
+  theme; elsewhere from the app's themes.
 - Every seam has a test that runs without the real thing: a fake host for the contract, a
   synthetic camera for the encoder, a clip with a hole in its audio for the timeline.
 - Costs are measured, not assumed; the numbers live next to the decisions.
@@ -58,8 +62,9 @@ which one in settings, and steps down on its own when the machine struggles.
 
     app/            the core (Go)
     app/docs/       the vault format, this page, the host contract
-    app/hosts/mac/  the Mac host (Swift)
-    app/hosts/…     one folder per further system, each built against HOST.md only
+    app/hosts/mac/      the Mac host (Swift)
+    app/hosts/linux/    the Linux host (planned)
+    app/hosts/windows/  the Windows host (planned)
 
 ## Per system
 
@@ -67,9 +72,14 @@ The choices behind the contract, each replaceable without touching the core:
 
 | system | host | picture | recording | without a host |
 |---|---|---|---|---|
-| macOS | Swift and AppKit, a terminal view over the system camera layer | the system's preview layer, on the graphics chip | the system's hardware H.264 encoder | any terminal; Ghostty, kitty and WezTerm draw the picture |
-| Linux, Omarchy first | to be decided from research | | | the person's own terminal |
-| Windows | to be decided from research | | | Windows Terminal; the picture in characters |
+| macOS | Swift and AppKit; the SwiftTerm text view with a transparent ground | the system's camera preview layer | one capture session into an mp4 writer: hardware H.264, AAC | any terminal; Ghostty, kitty and WezTerm draw the picture |
+| Linux, Omarchy first | GTK4 with the VTE text view, transparent ground, over a picture fed by GStreamer | PipeWire camera into GTK's video sink | the same pipeline, split: VA-API or NVENC H.264, x264 as fallback, AAC | the person's terminal: kitty graphics in Ghostty and kitty, sixel planned for Foot (Omarchy's default) |
+| Windows | a Go program around the system web view: xterm.js with a transparent ground over the camera in a video element, the core in a pseudo-console | the web view's camera, on the graphics chip | the web view's recorder into mp4: hardware H.264, AAC | Windows Terminal; sixel planned, the picture in characters until then |
+
+Why these: on each system the terminal view must let the camera show through its ground.
+Research on 2026-09-23 found SwiftTerm and VTE do this; Windows' own terminal controls cannot
+draw over video, so there the web view is the one that can. Memory for the text view and window
+alone: about 75 MB for GTK4 and VTE, about 320 MB for a web view host.
 
 ## Adding a system
 

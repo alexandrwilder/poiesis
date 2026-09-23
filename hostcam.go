@@ -39,7 +39,8 @@ func pictureMsg(on bool, fps int) map[string]any {
 	if !on {
 		return map[string]any{"t": "picture", "on": false}
 	}
-	return map[string]any{"t": "picture", "on": true, "look": currentLook.Name, "strength": currentStrength, "fps": fps}
+	return map[string]any{"t": "picture", "on": true, "look": currentLook.Name, "strength": currentStrength,
+		"matrix": currentLook.matrix(currentStrength), "fps": fps}
 }
 
 func (c *hostCamera) watch() {
