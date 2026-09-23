@@ -10,7 +10,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"syscall"
 	"time"
 )
 
@@ -38,7 +37,7 @@ func ensureOllama(v *Vault, model string) error {
 	c.Env = append(os.Environ(), "OLLAMA_MODELS="+dir, "OLLAMA_HOST=127.0.0.1:11434")
 	logf, _ := os.OpenFile(filepath.Join(appStateDir(), "ollama.log"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	c.Stdout, c.Stderr = logf, logf
-	c.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	detach(c)
 	setProgress("starting the local AI", 0, 0, 0)
 	if err := c.Start(); err != nil {
 		return fmt.Errorf("could not start the local AI: %w", err)

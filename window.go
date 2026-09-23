@@ -297,6 +297,6 @@ keybind = super+shift+t=unbind
 // startDetached starts the terminal in its own session so it outlives whoever asked for it.
 func startDetached(bin string, args ...string) error {
 	c := exec.Command(bin, args...)
-	c.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	detach(c)
 	return c.Start()
 }
