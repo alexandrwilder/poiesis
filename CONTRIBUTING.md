@@ -21,12 +21,14 @@ Objective-C through cgo, so Xcode's command line tools are needed there.
 |---|---|
 | the vault: folders, settings, ids, names | `vault.go`, `schema.go`, `ulid.go` |
 | recording and the camera picture | `capture.go`, `reflection.go`, `look.go`, `kitty.go`, `winsize.go` |
-| speech to text | `transcribe.go`, `progress.go` |
+| speech to text, and which language is spoken | `transcribe.go`, `language.go`, `progress.go` |
 | claims: the extractor and the prompt | `extract.go` |
 | writing the vault: entries, claims, entity pages, index | `write.go`, `entry_ops.go`, `media.go`, `lint.go` |
 | the screens | `tui.go` (frame, keys), `tui_record.go`, `tui_log.go`, `tui_entry.go`, `tui_entities.go`, `tui_settings.go`, `tui_helpers.go`, `mouse.go`, `missionpick.go`, `theme.go` |
 | the AI connection (MCP) | `mcp.go` |
-| the Mac app, the window, the menu bar item | `window.go`, `setup.go`, `bundle_tools.go`, `tray*.go`, `focus_*.go`, `ollama.go`, `devices.go` |
+| the camera seam and the window programs (`docs/HOST.md`) | `camera.go`, `host.go`, `hostcam.go`; `hosts/mac` (Swift), `hosts/linux` (C), `hosts/contract` (the test every one of them passes) |
+| the Mac app, the window, the menu bar item | `window.go`, `setup.go`, `bundle_tools.go`, `tray*.go`, `focus_*.go`, `ollama.go`, `devices.go`, `detach*.go` |
+| installing, updating and releasing | `install.sh`, `update.go`, `tui_update.go`, `dmg.go`, `release.sh` |
 | the command line | `main.go` |
 
 ## Where it was made to be extended

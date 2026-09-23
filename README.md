@@ -4,22 +4,35 @@ Talk to the camera for three minutes. Keep your own record. Let any AI read it.
 
 Poiesis is a video log that lives on your computer. Each entry is a short recording of you
 talking; the app turns it into words, then into claims, then into a log you can search,
-and an AI you choose can read years of it in one go. Nothing leaves your machine: the
-speech model and the local AI run inside the app. Your log is a folder of plain files.
+and an AI you choose can read years of it in one go. Your entries stay on your computer:
+the speech model and the local AI run inside the app. Your log is a folder of plain files.
+
+**A preview.** The first release is for Macs with Apple silicon and macOS 14 or later. The
+Linux window passes its tests but has not yet met a real camera; Windows is planned.
 
 > screenshot of the record screen goes here: the picture edge to edge, the frame over it,
 > the streak top right
 
 ## Install
 
-Mac, one line:
+Mac: download `Poiesis.dmg` from the newest release and drag Poiesis to Applications. Until
+Poiesis is signed by Apple, paste the one line in its READ ME FIRST into Terminal once.
+
+Or one line in Terminal, which also installs the `poiesis` command and the menu bar item:
 
     curl -fsSL https://raw.githubusercontent.com/alexandrwilder/poiesis/main/install.sh | sh
 
-Mac with Homebrew: `brew install --cask alexandrwilder/tap/poiesis`. Omarchy and Arch: `yay -S poiesis-bin`.
-Linux: the same one line as the Mac. Windows: `irm https://raw.githubusercontent.com/alexandrwilder/poiesis/main/install.ps1 | iex`.
+Linux: the same line installs the command. The Linux window is in `hosts/linux` (`make`).
 
 Then open Poiesis. Press space, talk, press enter.
+
+## Updates
+
+While it is open, Poiesis looks once a day whether a newer version exists: it asks the
+release page for the newest version number and sends nothing about you. A newer one shows in
+the frame's corner; enter on the updates row in settings installs it, the same way Poiesis
+was installed, and starts it again. Settings can turn the look off. `poiesis update` does it
+from a terminal. Every download is checked against the release's checksums first.
 
 ## What you get
 
@@ -36,10 +49,13 @@ Then open Poiesis. Press space, talk, press enter.
 
 ## The promise
 
-Recording, speech to text and the extraction of claims run on your computer. The one
-exception is a choice: in settings you can switch extraction to your own Claude key; then
-the words of each entry are sent to Anthropic under your account. Video and sound never
-go anywhere. The settings page says which is on, in one line, at the top.
+Recording, speech to text and the extraction of claims run on your computer. Two things
+reach the network: the models, downloaded once on first use, and the daily version check,
+which settings can turn off. One choice sends words away: in settings you can switch
+extraction to your own Claude key; then the words of each entry are sent to Anthropic under
+your account. Video and sound never go anywhere. An AI app you connect reads the text it asks
+for. Your folder follows your own backup and sync settings. The settings page says what is
+on, in one line, at the top.
 
 ## The files, the format, the AI connection
 
@@ -50,10 +66,12 @@ The app itself is AGPL-3.0. The tools inside the app and their licences are list
 
 ## Made of
 
-Go, Bubble Tea for the screens, ffmpeg for the camera, whisper.cpp for speech to text,
-Ollama with a small local model for the claims, and on a Mac a renamed copy of the Ghostty
-terminal as the window, because it can draw real pixels under text. All open source, all
-credited in `NOTICE.md`.
+Go, Bubble Tea for the screens, whisper.cpp for speech to text, Ollama with a small local
+model for the claims, ffmpeg for video and sound. Each system gets a small window program
+that draws the camera under the text and records it with the system's own encoder: Swift and
+SwiftTerm on a Mac (`hosts/mac`), C on GTK 4, VTE and GStreamer on Linux (`hosts/linux`).
+`docs/ARCHITECTURE.md` explains the layers and `docs/HOST.md` the contract between them. All
+open source, all credited in `NOTICE.md`.
 
 ## Contributing
 

@@ -28,6 +28,13 @@ app. Their licences travel with them; here is the list.
 | KB-Whisper large (Swedish, optional) | Apache-2.0 (KBLab) | huggingface.co/KBLab/kb-whisper-large |
 | Qwen 3.5 4B (through Ollama) | Apache-2.0 | ollama.com/library |
 
+## The Linux window
+
+`hosts/linux` links against libraries the system's package manager installs; Poiesis does
+not ship them: GTK 4 (LGPL-2.1-or-later), VTE (LGPL-3.0-or-later), GStreamer and its plugins
+(LGPL-2.1-or-later; the H.264 and AAC encoders it picks have their own licences) and
+json-glib (LGPL-2.1-or-later).
+
 ## Go libraries
 
 Bubble Tea, Bubbles, Lipgloss and x/ansi (MIT, Charm); the Model Context Protocol Go SDK

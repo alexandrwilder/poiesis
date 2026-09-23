@@ -12,13 +12,14 @@ who has never seen the code.
    the vault has a language setting. `dayHeading` in `tui_log.go`.
 4. **Windows: the one-line installer.** `install.ps1` is a draft nobody has run. Run it on
    a Windows machine, make it true, report what the tray does there.
-5. **Omarchy: the window.** On Arch with Ghostty or Alacritty, `poiesis window` should open
-   the frameless window with the picture. Verify, fix the flags, screenshot.
+5. **Linux: the window on a real machine.** `hosts/linux` passes its tests in Arch under
+   Docker, with a test picture and tone. Run it on Omarchy with a real camera through
+   PipeWire, give it Omarchy's own theme, and package it for the AUR.
 6. **A third extractor.** `extract.go`, the `Extractor` interface. llama.cpp directly, or
    any local server that speaks the OpenAI shape. Must score on `plans/eval` before merge.
-7. **`poiesis update`.** Check the release page, download the new binary, verify the checksum,
-   replace itself, re-run `setup --app` on a Mac. The plan is in
-   `plans/distribution-and-price.md`.
+7. **Windows: the window.** `docs/ARCHITECTURE.md` has the plan: a Go program around the
+   system web view, xterm.js over the camera in a video element. The core already builds for
+   Windows; nothing has run there yet.
 8. **The Map.** A screen of lanes over time, one per mission and one per person, with the
    claims as dots. `plans/` has the design. The first version can be a static HTML page
    the app writes and opens.
@@ -34,5 +35,6 @@ who has never seen the code.
     `CONTRIBUTING.md` without changing a byte of output; the tests must stay green.
 13. **Package the tests' fixtures.** The tests that need a vault build one by hand each
     time; a `testvault()` helper with three entries would make new tests a few lines.
-14. **Signing.** Document the Developer ID and notarisation steps for the release run,
-    so a fork can ship a signed build too.
+14. **Signing.** Sign and notarise the Mac release with a Developer ID in `release.sh`, so
+    macOS opens it without the Terminal line and keeps the camera and microphone
+    permissions across updates; document the steps so a fork can ship a signed build too.
