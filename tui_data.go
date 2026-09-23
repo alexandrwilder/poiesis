@@ -69,7 +69,7 @@ func loadTUIDataInner(v *Vault) (*tuiData, error) {
 		}
 		return d.entities[i].ID < d.entities[j].ID
 	})
-	if v.Config.Extractor == "claude" || v.Config.Extractor == "" {
+	if v.Config.Extractor == "claude" {
 		if os.Getenv("ANTHROPIC_API_KEY") != "" {
 			d.netInUse = "" // shown only while a call is in flight
 		}
@@ -149,7 +149,7 @@ func (d *tuiData) searchClaims(query string) []Claim {
 		if kind != "" && c.Kind != kind {
 			continue
 		}
-		if since != "" && c.StatedAt[:len(since)] < since {
+		if n := min(len(since), len(c.StatedAt)); since != "" && c.StatedAt[:n] < since[:n] {
 			continue
 		}
 		hay := strings.ToLower(c.Text + " " + c.Quote + " " + strings.Join(c.About, " "))

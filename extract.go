@@ -181,13 +181,13 @@ func buildUserPrompt(req ExtractRequest) string {
 // NewExtractor picks the backend from the vault config.
 func NewExtractor(cfg Config, claimsFile string) (Extractor, error) {
 	switch cfg.Extractor {
-	case "claude", "":
+	case "claude":
 		model := cfg.Model
 		if model == "" {
 			model = "claude-opus-5"
 		}
 		return &claudeExtractor{model: model, client: anthropic.NewClient()}, nil
-	case "ollama":
+	case "ollama", "": // not chosen means local
 		model := cfg.Model
 		if model == "" {
 			model = "qwen3.5:4b" // measured 2026-09-02 on the mixed clip: best claims per second that fits a laptop

@@ -73,8 +73,8 @@ usage:
 flags (all commands):
   --vault DIR      vault folder (default: $POIESIS_VAULT or ~/Documents/Poiesis Vault)
   --lang auto|sv|en  language setting for this run (default: vault config, then auto)
-  --extractor claude|ollama|file   who extracts claims (default: vault config, then claude)
-  --model NAME     model for the extractor (default: claude-opus-5 / qwen3:8b)
+  --extractor claude|ollama|file   who extracts claims (default: vault config, then ollama, on this computer)
+  --model NAME     model for the extractor (default: qwen3.5:4b with ollama, claude-opus-5 with claude)
   --claims-file F  with --extractor file: read the extraction result from this JSON file
   --mission NAME   mission label for the entries ingested in this run
   --keep-inbox     copy instead of move the inbox file into raw/

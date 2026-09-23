@@ -143,8 +143,11 @@ func (m *tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// the camera stream has a fixed size; the picture is sampled to the new window at once
 		return m, nil
 	case dataReloadedMsg:
-		m.data = msg.data
 		m.status = msg.status
+		if msg.data == nil { // the reload failed: keep what is on screen; the status says why
+			return m, nil
+		}
+		m.data = msg.data
 		m.cacheStreak()
 		if msg.openEntry != "" {
 			for i, e := range m.data.entries {

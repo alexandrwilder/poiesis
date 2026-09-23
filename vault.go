@@ -41,7 +41,7 @@ type Config struct {
 func defaultConfig() Config {
 	return Config{
 		Language:      "auto",
-		Extractor:     "claude",
+		Extractor:     "ollama", // on this computer; a cloud AI is only ever the person's own choice
 		Model:         "",
 		ModelsDir:     defaultModelsDir(),
 		WhisperBin:    "whisper-cli",

@@ -123,8 +123,9 @@ func Transcribe(v *Vault, m *Media, wav string, names string) (*Transcript, erro
 				noVAD = append(noVAD, a)
 			}
 			var out2 []byte
+			first := err
 			out2, err = runReporting("transcribing", whisperCmd(v, noVAD))
-			out = append(out, []byte("\n[poiesis] voice detection failed ("+err.Error()+"); retried without it (silence hallucinations possible)\n")...)
+			out = append(out, []byte("\n[poiesis] voice detection failed ("+first.Error()+"); retried without it (silence hallucinations possible)\n")...)
 			out = append(out, out2...)
 		}
 		if err != nil {
