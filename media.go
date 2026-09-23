@@ -164,7 +164,12 @@ func ExtractAudio(v *Vault, m *Media) (string, error) {
 	if _, err := os.Stat(wav); err == nil {
 		return wav, nil
 	}
-	cmd := exec.Command(findTool(v.Config.FFmpegBin), "-y", "-loglevel", "error", "-i", src, "-vn", "-ac", "1", "-ar", "16000", "-c:a", "pcm_s16le", wav)
+	// aresample=async=1 fills holes in the audio's timeline with silence, so the wav is as
+	// long as the recording and every word keeps its second. ffmpeg 4.3 to 9.0 drop bits of
+	// sound from the Mac camera input (fixed upstream in ddf8f40); without this the words
+	// drift, about 20 s early by the end of a three-minute entry.
+	cmd := exec.Command(findTool(v.Config.FFmpegBin), "-y", "-loglevel", "error", "-i", src, "-vn",
+		"-af", "aresample=async=1:first_pts=0", "-ac", "1", "-ar", "16000", "-c:a", "pcm_s16le", wav)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return "", fmt.Errorf("ffmpeg audio: %s: %w", strings.TrimSpace(string(out)), err)
 	}
