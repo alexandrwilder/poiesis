@@ -15,12 +15,13 @@ Linux window passes its tests but has not yet met a real camera; Windows is plan
 
 ## Install
 
-Mac: download `Poiesis.dmg` from the newest release and drag Poiesis to Applications. Until
-Poiesis is signed by Apple, paste the one line in its READ ME FIRST into Terminal once.
-
-Or one line in Terminal, which also installs the `poiesis` command and the menu bar item:
+Mac with Apple silicon and macOS 14 or later: paste one line into Terminal. It installs the
+app, the `poiesis` command and the menu bar item, and checks every file first:
 
     curl -fsSL https://raw.githubusercontent.com/alexandrwilder/poiesis/main/install.sh | sh
+
+Or download `Poiesis.dmg` from the newest release and drag Poiesis to Applications. Poiesis is
+not signed by Apple yet, so a download from a browser needs the one line in its READ ME FIRST.
 
 Linux: the same line installs the command. The Linux window is in `hosts/linux` (`make`).
 
