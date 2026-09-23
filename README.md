@@ -59,10 +59,10 @@ on, in one line, at the top.
 
 ## The files, the format, the AI connection
 
-`docs/FORMAT.md` explains the vault in plain words with examples. The format and the AI
-connection are MIT licensed so that other tools can read and write Poiesis vaults freely.
-The app itself is AGPL-3.0. The tools inside the app and their licences are listed in
-`NOTICE.md`.
+`docs/FORMAT.md` explains the vault in plain words with examples. The format is MIT licensed
+(`LICENSES/MIT.txt`), so any tool can read and write Poiesis vaults freely, your own AI
+connection included. The app is AGPL-3.0 (`LICENSE`). The name and the mark are covered by
+`TRADEMARK.md`. The tools inside the app and their licences are listed in `NOTICE.md`.
 
 ## Made of
 

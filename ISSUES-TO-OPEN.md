@@ -16,16 +16,16 @@ who has never seen the code.
    Docker, with a test picture and tone. Run it on Omarchy with a real camera through
    PipeWire, give it Omarchy's own theme, and package it for the AUR.
 6. **A third extractor.** `extract.go`, the `Extractor` interface. llama.cpp directly, or
-   any local server that speaks the OpenAI shape. Must score on `plans/eval` before merge.
+   any local server that speaks the OpenAI shape. Must score on the gold set (the maintainer runs it) before merge.
 7. **Windows: the window.** `docs/ARCHITECTURE.md` has the plan: a Go program around the
    system web view, xterm.js over the camera in a video element. The core already builds for
    Windows; nothing has run there yet.
 8. **The Map.** A screen of lanes over time, one per mission and one per person, with the
-   claims as dots. `plans/` has the design. The first version can be a static HTML page
+   claims as dots. The design is written; ask for it in the issue. The first version can be a static HTML page
    the app writes and opens.
 9. **Mission lines that turn green.** A mission page may carry three lines of what to talk
    about; after processing, the ones talked about turn green on the entry page. Design in
-   `plans/onboarding-kickstarts.md`.
+   the maintainer's notes; ask for it in the issue.
 10. **Swedish-only transcription from settings.** The KB-Whisper model exists behind
     `setup --swedish`; it should be a row on the settings page with its size and a
     download on first use.

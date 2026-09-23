@@ -44,8 +44,9 @@ Objective-C through cgo, so Xcode's command line tools are needed there.
 
 ## The rules
 
-1. **Nothing about extraction ships without a score.** `plans/eval/` holds the gold set
-   and the scorer. A prompt or model change is judged by the number, never by eye.
+1. **Nothing about extraction ships without a score.** The maintainer keeps a gold set and a
+   scorer and runs them on any change to the prompt or the model; the number goes in the
+   review. A change is judged by the number, never by eye.
 2. **Simple English, everywhere a person reads.** Screen text, errors, this file. No
    jargon; say what happens.
 3. **The vault is the truth, the app is a view.** Videos are ground truth; pages and
@@ -60,8 +61,15 @@ Objective-C through cgo, so Xcode's command line tools are needed there.
 
 ## The opinions, written down
 
-`../plans/calibration.md` is the sheet of decided opinions with their dates and reasons.
-Argue with a decision, not with a mystery: open an issue that names the row.
+The decided opinions are written down with their dates and reasons in the maintainer's notes.
+Argue with a decision, not with a mystery: open an issue that names it, and ask for the note.
+
+## Signing off
+
+Every commit carries a sign-off (`git commit -s`). With it you certify the Developer
+Certificate of Origin (developercertificate.org): you wrote the change, or have the right to
+give it under this project's licences. You keep your copyright. The app stays AGPL-3.0 and the
+format MIT.
 
 ## Voice
 
