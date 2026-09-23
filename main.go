@@ -51,7 +51,7 @@ func dumpScreen(m *tuiModel, name string) string {
 }
 
 // version is set by the release build (-ldflags "-X main.version=…"); this is the next one
-var version = "0.0.5"
+var version = "0.0.6"
 
 func usage() {
 	fmt.Fprintf(os.Stderr, `Poiesis %s
