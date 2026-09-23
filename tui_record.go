@@ -507,7 +507,7 @@ func (m *tuiModel) viewRecord() string {
 	// the host keeps see-through (docs/HOST.md)
 	if m.reflectionOn() && st.cap != nil && refl == nil {
 		W, H, all := m.windowOverlays(overlays)
-		return windowTintReset + renderTextOver(W, H, all)
+		return renderTextOver(W, H, all) // no tint and no image codes: the host owns the window
 	}
 	if m.reflectionOn() && refl != nil {
 		if f := refl.snapshot(); f != nil {

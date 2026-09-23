@@ -72,7 +72,7 @@ The choices behind the contract, each replaceable without touching the core:
 
 | system | host | picture | recording | without a host |
 |---|---|---|---|---|
-| macOS | Swift and AppKit; the SwiftTerm text view with a transparent ground | the system's camera preview layer | one capture session into an mp4 writer: hardware H.264, AAC | any terminal; Ghostty, kitty and WezTerm draw the picture |
+| macOS | Swift and AppKit; the SwiftTerm text view with a transparent ground | the camera's frames, without a copy, in a display layer that is fed only when the picture moves | one capture session in the camera's own 720p format into an mp4 writer: hardware H.264, AAC | any terminal; Ghostty, kitty and WezTerm draw the picture |
 | Linux, Omarchy first | GTK4 with the VTE text view, transparent ground, over a picture fed by GStreamer | PipeWire camera into GTK's video sink | the same pipeline, split: VA-API or NVENC H.264, x264 as fallback, AAC | the person's terminal: kitty graphics in Ghostty and kitty, sixel planned for Foot (Omarchy's default) |
 | Windows | a Go program around the system web view: xterm.js with a transparent ground over the camera in a video element, the core in a pseudo-console | the web view's camera, on the graphics chip | the web view's recorder into mp4: hardware H.264, AAC | Windows Terminal; sixel planned, the picture in characters until then |
 
