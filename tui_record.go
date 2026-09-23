@@ -54,7 +54,7 @@ func tickCmd() tea.Cmd {
 // cannot keep that pace, the tick stretches: the picture slows before anything else does.
 func (m *tuiModel) fastTickCmd() tea.Cmd {
 	st := &m.record
-	want := 55 * time.Millisecond
+	want := m.frameInterval()
 	if !st.lastTick.IsZero() {
 		gap := time.Since(st.lastTick)
 		if gap > want*2 {
@@ -87,13 +87,20 @@ func (m *tuiModel) previewSize() (int, int) {
 	return 256, 144
 }
 
-// previewFPS: how many frames a second the camera delivers to the screen.
+// previewFPS: how many frames a second the camera delivers to the screen. Every frame costs
+// the window a copy, a colour conversion, a new texture and a full redraw (Ghostty 1.3), so
+// the clear picture runs at 12: measured 2026-09-04, about 45% of a core against 58% at 18.
 func (m *tuiModel) previewFPS() int {
 	switch videoMode(m.v.Config) {
 	case "light", "styled":
 		return 10
 	}
-	return 18
+	return 12
+}
+
+// frameInterval is the screen's tick while a picture shows: one tick per camera frame.
+func (m *tuiModel) frameInterval() time.Duration {
+	return time.Second / time.Duration(m.previewFPS())
 }
 
 // clearVideo: real pixels under the text, when the setting and the terminal allow it.
