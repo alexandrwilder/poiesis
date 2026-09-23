@@ -188,6 +188,9 @@ func (m *tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case ingestDoneMsg:
 		m.record.processing = false
 		m.record.completed = ""
+		if m.scr == screenRecord && m.record.phase == "ready" && m.focused {
+			m.startPreview() // the entry is done: the picture comes back
+		}
 		if msg.err != nil {
 			if errors.Is(msg.err, ErrNoSpeech) {
 				m.record.lastErr = ""

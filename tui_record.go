@@ -102,8 +102,15 @@ func (m *tuiModel) clearVideo() bool {
 	return (mode == "clear" || mode == "light") && terminalDrawsImages()
 }
 
+// pictureMayStart says whether the camera picture may start now. It rests while an entry
+// is processed: the speech model and the local AI fill the graphics chip for a minute or
+// more, and a live picture drawn on the same chip is what made the app lag after enter.
+func (m *tuiModel) pictureMayStart() bool {
+	return m.reflectionOn() && m.record.cap == nil && !m.record.processing
+}
+
 func (m *tuiModel) startPreview() {
-	if !m.reflectionOn() || m.record.cap != nil {
+	if !m.pictureMayStart() {
 		return
 	}
 	w, h := m.previewSize()
@@ -346,7 +353,7 @@ func (m *tuiModel) completeEntry() tea.Cmd {
 	mission := strings.TrimSpace(st.mission.Value())
 	v := m.v
 	out := v.Path("inbox", time.Now().Format("2006-01-02T15-04-05")+".mp4")
-	m.startPreview()
+	// no picture until the entry is processed (pictureMayStart); it comes back in ingestDoneMsg
 	return tea.Batch(tickCmd(), func() tea.Msg {
 		if err := concatSegments(findTool(v.Config.FFmpegBin), parts, out); err != nil {
 			return ingestDoneMsg{err: err}
