@@ -83,6 +83,9 @@ func parentPID(pid int) int {
 // openOrFocus is what the menu bar item does: one window, brought forward if it is open.
 // `what` is "" to just show it, or "record" to put it on the record screen.
 func openOrFocus(root, what string) error {
+	if app := macHostApp(); app != "" {
+		return openHostApp(app, what)
+	}
 	if focusWindow() {
 		if what != "" {
 			_ = os.MkdirAll(appStateDir(), 0o755)
@@ -93,7 +96,35 @@ func openOrFocus(root, what string) error {
 	return openWindow(root, what == "record")
 }
 
+// macHostApp is Poiesis.app when its main program is the Mac host (hosts/mac), else "".
+func macHostApp() string {
+	if runtime.GOOS != "darwin" {
+		return ""
+	}
+	if app := outerAppBundle(); app != "" && fileThere(filepath.Join(app, "Contents", "MacOS", "PoiesisHost")) {
+		return app
+	}
+	return ""
+}
+
+// openHostApp opens the Mac host's window or brings it forward: it is a regular app, so
+// macOS does both reliably. A core already running in it reads the command file.
+func openHostApp(app, what string) error {
+	if what != "" {
+		_ = os.MkdirAll(appStateDir(), 0o755)
+		_ = os.WriteFile(commandFile(), []byte(what), 0o644)
+	}
+	return exec.Command("open", "-a", app).Run()
+}
+
 func openWindow(root string, record bool) error {
+	if app := macHostApp(); app != "" {
+		what := ""
+		if record {
+			what = "record"
+		}
+		return openHostApp(app, what)
+	}
 	self, err := os.Executable()
 	if err != nil {
 		return err

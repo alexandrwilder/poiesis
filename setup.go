@@ -364,6 +364,7 @@ func writeMacApp(v *Vault) (string, error) {
 	app := filepath.Join(home, "Applications", "Poiesis.app")
 	menu := filepath.Join(app, "Contents", "Library", "LoginItems", "Poiesis Menu.app")
 	icns := filepath.Join(filepath.Dir(self), "assets", "Poiesis.icns")
+	host, hostRes := macHost(self) // with the Mac host the app is its window; without it, Ghostty
 
 	for _, b := range []struct {
 		root, id, extra string
@@ -391,6 +392,10 @@ func writeMacApp(v *Vault) (string, error) {
 		if b.id != "app.poiesis" {
 			name = "Poiesis Menu"
 		}
+		exe := "poiesis"
+		if b.id == "app.poiesis" && host != "" {
+			exe = "PoiesisHost"
+		}
 		plist := `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
@@ -399,7 +404,7 @@ func writeMacApp(v *Vault) (string, error) {
   <key>CFBundleIdentifier</key><string>` + b.id + `</string>
   <key>CFBundleVersion</key><string>` + version + "." + fmt.Sprint(time.Now().Unix()) + `</string>
   <key>CFBundleShortVersionString</key><string>` + version + `</string>
-  <key>CFBundleExecutable</key><string>poiesis</string>
+  <key>CFBundleExecutable</key><string>` + exe + `</string>
   <key>CFBundleIconFile</key><string>Poiesis</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>NSHighResolutionCapable</key><true/>
@@ -412,9 +417,13 @@ func writeMacApp(v *Vault) (string, error) {
 			return "", err
 		}
 	}
-	// the window host, renamed: without this the menu bar says "Ghostty" and the camera
-	// indicator names it too, which is confusing when the app is called Poiesis
-	if err := embedTerminal(app); err != nil {
+	if host != "" {
+		if err := placeMacHost(app, host, hostRes); err != nil {
+			return "", err
+		}
+	} else if err := embedTerminal(app); err != nil {
+		// the window host, renamed: without this the menu bar says "Ghostty" and the camera
+		// indicator names it too, which is confusing when the app is called Poiesis
 		return "", err
 	}
 	// the tools, so the app works on a Mac with nothing installed
@@ -430,11 +439,17 @@ func writeMacApp(v *Vault) (string, error) {
 	stripCustomIcon(filepath.Join(app, "Contents", "Frameworks", terminalAppName))
 	_ = exec.Command("xattr", "-cr", app).Run()
 	signOrder := []string{menu, app}
-	if t := embeddedTerminal(); fileThere(t) && !signedAs(t, "app.poiesis.terminal") {
+	core := filepath.Join(app, "Contents", "MacOS", "poiesis")
+	if host != "" {
+		signOrder = []string{core, menu, app} // the core first: it is no longer the app's main program
+	} else if t := embeddedTerminal(); fileThere(t) && !signedAs(t, "app.poiesis.terminal") {
 		signOrder = []string{t, menu, app} // sign the terminal once; after that leave it alone
 	}
 	for _, b := range signOrder {
 		id := "app.poiesis"
+		if b == core {
+			id = "app.poiesis.core"
+		}
 		args := []string{"--force", "--sign", "-", "--identifier", id, "--timestamp=none"}
 		if b == filepath.Join(app, "Contents", "Frameworks", terminalAppName) { // the window host, not the app around it
 			args = []string{"--force", "--deep", "--sign", "-", "--identifier", id + ".terminal", "--timestamp=none"}
@@ -455,11 +470,60 @@ func writeMacApp(v *Vault) (string, error) {
 	// bundle, past macOS's icon cache, so a new mark shows without a logout
 	if png := filepath.Join(filepath.Dir(self), "assets", "icon.png"); fileThere(png) {
 		setCustomIcon(app, png)
-		setCustomIcon(filepath.Join(app, "Contents", "Frameworks", terminalAppName), png)
+		if t := filepath.Join(app, "Contents", "Frameworks", terminalAppName); fileThere(t) {
+			setCustomIcon(t, png)
+		}
 	}
 	_ = exec.Command("/usr/bin/touch", app).Run()
 	_ = exec.Command("/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister", "-f", app).Run()
 	return app, nil
+}
+
+// macHost finds the Mac host (hosts/mac, docs/HOST.md) to put in the app: the copy already
+// inside an installed app (an update), POIESIS_HOST_BIN, or the build that hosts/mac/build.sh
+// leaves in the caches. It returns the program and SwiftTerm's resource bundle beside it.
+func macHost(self string) (bin, res string) {
+	home, _ := os.UserHomeDir()
+	build := filepath.Join(home, "Library", "Caches", "Poiesis", "host-build", "release")
+	candidates := [][2]string{
+		{filepath.Join(filepath.Dir(self), "PoiesisHost"), filepath.Join(filepath.Dir(self), "..", "Resources", "SwiftTerm_SwiftTerm.bundle")},
+		{filepath.Join(build, "PoiesisHost"), filepath.Join(build, "SwiftTerm_SwiftTerm.bundle")},
+	}
+	if b := os.Getenv("POIESIS_HOST_BIN"); b != "" {
+		candidates = append([][2]string{{b, filepath.Join(filepath.Dir(b), "SwiftTerm_SwiftTerm.bundle")}}, candidates...)
+	}
+	for _, c := range candidates {
+		if fileThere(c[0]) {
+			return c[0], c[1]
+		}
+	}
+	return "", ""
+}
+
+// placeMacHost makes the Mac host the app's main program, with SwiftTerm's resources and
+// licence beside it, and takes out the Ghostty window it replaces.
+func placeMacHost(app, host, res string) error {
+	macos := filepath.Join(app, "Contents", "MacOS")
+	resources := filepath.Join(app, "Contents", "Resources")
+	if err := copyInto(host, filepath.Join(macos, "PoiesisHost"), 0o755); err != nil {
+		return fmt.Errorf("putting the window in the app: %w", err)
+	}
+	if fileThere(res) {
+		dst := filepath.Join(resources, "SwiftTerm_SwiftTerm.bundle")
+		if filepath.Clean(res) != filepath.Clean(dst) {
+			_ = os.RemoveAll(dst)
+			if out, err := exec.Command("ditto", res, dst).CombinedOutput(); err != nil {
+				return fmt.Errorf("copying the text view's resources: %s", strings.TrimSpace(string(out)))
+			}
+		}
+	}
+	home, _ := os.UserHomeDir()
+	if lic := filepath.Join(home, "Library", "Caches", "Poiesis", "host-build", "checkouts", "SwiftTerm", "LICENSE"); fileThere(lic) {
+		_ = copyInto(lic, filepath.Join(resources, "NOTICE-swiftterm.txt"), 0o644)
+	}
+	_ = os.RemoveAll(filepath.Join(app, "Contents", "Frameworks", terminalAppName))
+	_ = os.Remove(filepath.Join(resources, "NOTICE-ghostty.txt"))
+	return nil
 }
 
 // stripCustomIcon removes a custom Finder icon so the bundle can be signed.

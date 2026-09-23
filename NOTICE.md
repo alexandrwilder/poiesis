@@ -12,8 +12,9 @@ app. Their licences travel with them; here is the list.
 
 | what | why | licence | source |
 |---|---|---|---|
-| Ghostty | the window: a terminal that draws real pixels under text, shipped renamed so macOS shows Poiesis's name | MIT, © Mitchell Hashimoto | github.com/ghostty-org/ghostty |
-| ffmpeg, ffprobe | recording the camera, reading video | GPL-2.0-or-later as built by Homebrew (it includes x264) | ffmpeg.org |
+| SwiftTerm | the text view in the window, over the camera | MIT, © Miguel de Icaza; the text is `NOTICE-swiftterm.txt` in the app | github.com/migueldeicaza/SwiftTerm |
+| Ghostty | the window in builds without the Mac host (`hosts/mac`) | MIT, © Mitchell Hashimoto | github.com/ghostty-org/ghostty |
+| ffmpeg, ffprobe | reading video and audio, joining parts, recording when there is no host | GPL-2.0-or-later as built by Homebrew (it includes x264) | ffmpeg.org |
 | the libraries ffmpeg loads | codecs and formats | each its own: x264 (GPL), libvpx (BSD), opus (BSD), lame (LGPL), and others; the exact files are in `Poiesis.app/Contents/Frameworks/lib` | |
 | whisper.cpp, ggml | speech to text | MIT, © Georgi Gerganov | github.com/ggml-org/whisper.cpp |
 | Ollama | runs the local AI model | MIT | github.com/ollama/ollama |
