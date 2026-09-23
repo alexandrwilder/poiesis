@@ -503,15 +503,15 @@ func (m *tuiModel) viewRecord() string {
 	if st.cap != nil {
 		refl = st.cap.picture()
 	}
+	// a host draws the picture behind the text view: only the frame and the text, on a ground
+	// the host keeps see-through (docs/HOST.md)
+	if m.reflectionOn() && st.cap != nil && refl == nil {
+		W, H, all := m.windowOverlays(overlays)
+		return windowTintReset + renderTextOver(W, H, all)
+	}
 	if m.reflectionOn() && refl != nil {
 		if f := refl.snapshot(); f != nil {
-			W, H := max(20, m.width), max(5, m.height)
-			all := make([]overlayText, 0, len(overlays)+H+2)
-			for _, o := range overlays {
-				all = append(all, overlayText{row: o.row + 1, col: o.col + 2, text: o.text, rgb: o.rgb})
-			}
-			all = append(all, frameOverlays(m, W, H)...)
-			m.fullWindow = true
+			W, H, all := m.windowOverlays(overlays)
 			if m.clearVideo() {
 				// real pixels under the text; the title bar takes the picture's top colour.
 				// The picture is sent only when the camera has a new frame or the window
@@ -564,6 +564,19 @@ func (m *tuiModel) viewRecord() string {
 		lines[o.row] = line + style.Render(o.text)
 	}
 	return windowTintReset + kittyClear + strings.Join(lines, "\n")
+}
+
+// windowOverlays places the record screen's text for a picture that fills the window, with
+// the frame drawn over it, and marks the view as painting the whole window.
+func (m *tuiModel) windowOverlays(overlays []overlayText) (W, H int, all []overlayText) {
+	W, H = max(20, m.width), max(5, m.height)
+	all = make([]overlayText, 0, len(overlays)+H+2)
+	for _, o := range overlays {
+		all = append(all, overlayText{row: o.row + 1, col: o.col + 2, text: o.text, rgb: o.rgb})
+	}
+	all = append(all, frameOverlays(m, W, H)...)
+	m.fullWindow = true
+	return W, H, all
 }
 
 // frameOverlays draws the frame as text over the picture: the streak top right, the keys

@@ -156,6 +156,9 @@ func main() {
 
 	switch cmd {
 	case "ui", "view":
+		if cmd == "ui" {
+			theHost = connectHost() // nil unless a host started this core (docs/HOST.md)
+		}
 		m, err := newTUI(v)
 		if err != nil {
 			fail(err)

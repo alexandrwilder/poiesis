@@ -13,8 +13,15 @@ type camera interface {
 	ended() <-chan error    // receives when the camera stops on its own
 }
 
-// openCamera starts the camera on the best path this machine has.
+// openCamera starts the camera on the best path this machine has: the host when there is
+// one that can do what is asked, otherwise ffmpeg run by the core.
 func openCamera(v *Vault, opts captureOptions) (camera, error) {
+	if h := theHost; h != nil && h.has("picture") && (!opts.Record || h.has("record")) {
+		if c, err := openHostCamera(h, opts); err == nil {
+			return c, nil
+		}
+		// the host did not take it: ffmpeg below
+	}
 	c, err := startCapture(v, opts)
 	if err != nil {
 		return nil, err // a nil *capture must never become a non-nil camera

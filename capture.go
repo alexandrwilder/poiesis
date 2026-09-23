@@ -205,6 +205,11 @@ func (c *capture) level() float64 {
 	c.mu.Lock()
 	db := c.levelDB
 	c.mu.Unlock()
+	return meterFromDB(db)
+}
+
+// meterFromDB maps an RMS level in dB to the meter's 0..1, the same for every camera path.
+func meterFromDB(db float64) float64 {
 	if db < -60 {
 		db = -60
 	}
