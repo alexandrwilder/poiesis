@@ -44,20 +44,27 @@ type whisperJSON struct {
 }
 
 // Transcribe runs whisper-cli with the language rule from day 0:
-// auto/en -> large-v3-turbo with the setting; sv -> KB-Whisper forced Swedish.
+// auto/en -> large-v3-turbo with the setting; sv -> KB-Whisper forced Swedish. On auto, a
+// recording that is clearly Swedish throughout is read as sv (language.go).
 // The names hint is the vault's entity vocabulary. Output is cached next to the raw file.
 func Transcribe(v *Vault, m *Media, wav string, names string) (*Transcript, error) {
 	lang := strings.ToLower(v.Config.Language)
 	if lang == "" {
 		lang = "auto"
 	}
+	// the configured folder first, then the app's default folder, so a vault whose config.json
+	// still points at an old location keeps working after the models move
+	dirs := []string{v.Config.ModelsDir, defaultModelsDir()}
+	heard := ""
+	if lang == "auto" {
+		if heard = routeLanguage(v, dirs, wav, m.DurationS); heard != "" {
+			lang = heard
+		}
+	}
 	modelFile := v.Config.TurboModel
 	if lang == "sv" {
 		modelFile = v.Config.KBModel
 	}
-	// the configured folder first, then the app's default folder, so a vault whose config.json
-	// still points at an old location keeps working after the models move
-	dirs := []string{v.Config.ModelsDir, defaultModelsDir()}
 	modelPath, vadPath := "", ""
 	for _, d := range dirs {
 		mp, vp := filepath.Join(d, modelFile), filepath.Join(d, v.Config.VADModel)
@@ -142,6 +149,9 @@ func Transcribe(v *Vault, m *Media, wav string, names string) (*Transcript, erro
 	t := &Transcript{Model: modelName, Language: lang, Transcribr: "whisper.cpp", Seconds: time.Since(start).Seconds()}
 	if lang == "auto" {
 		t.Detected = wj.Result.Language
+	}
+	if heard != "" {
+		t.Detected = heard
 	}
 	for _, seg := range wj.Transcription {
 		txt := strings.TrimSpace(seg.Text)
