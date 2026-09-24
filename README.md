@@ -1,81 +1,123 @@
-# Poiesis
+<p align="center">
+  <img src="assets/icon.png" width="112" alt="The Poiesis icon">
+</p>
 
-Talk to the camera for three minutes. Keep your own record. Let any AI read it.
+<h1 align="center">Poiesis</h1>
 
-Poiesis is a video log that lives on your computer. Each entry is a short recording of you
-talking; the app turns it into words, then into claims, then into a log you can search,
-and an AI you choose can read years of it in one go. Your entries stay on your computer:
-the speech model and the local AI run inside the app. Your log is a folder of plain files.
+<p align="center">
+  <b>Say it once. It comes back.</b><br>
+  A video journal any AI can read. Free, open source, on your own Mac.
+</p>
 
-**A preview.** The first release is for Macs with Apple silicon and macOS 14 or later. The
-Linux window passes its tests but has not yet met a real camera; Windows is planned.
+<p align="center">
+  <a href="#install">Install</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#the-promise">The promise</a>
+</p>
 
-> screenshot of the record screen goes here: the picture edge to edge, the frame over it,
-> the streak top right
+<p align="center">
+  <img src="docs/images/record.png" width="880" alt="The record screen, ready: press space and talk.">
+</p>
 
-## Install
+Talk to the camera for three minutes. Poiesis keeps your exact words and the second you said
+them, ties them to the people, places and missions you mention, and gives them back when they
+matter. In files you keep, on your own machine.
 
-Mac with Apple silicon and macOS 14 or later: paste one line into Terminal. It installs the
-app, the `poiesis` command and the menu bar item, and checks every file first:
+## Not notes. A living log.
 
-    curl -fsSL https://raw.githubusercontent.com/alexandrwilder/poiesis/main/install.sh | sh
+Notes wait for you to remember them. A living log remembers for you: what you say once comes
+back when the same people, places and plans come up again.
 
-Or download `Poiesis.dmg` from the newest release and drag Poiesis to Applications. Poiesis is
-not signed by Apple yet, so a download from a browser needs the one line in its READ ME FIRST.
+> **"The whole family loved the stew."**<br>
+> Three years later you have no idea what to cook. You ask, and the stew comes back, playing
+> from that second.
 
-Linux: the same line installs the command. The Linux window is in `hosts/linux` (`make`).
+> **"Legs heavy. Slept five hours."**<br>
+> Six weeks into a marathon plan, every morning you said something like it lies side by
+> side, each with its clip.
 
-Then open Poiesis. Press space, talk, press enter.
+> **"I'll show the first version to someone this week."**<br>
+> On Monday you ask what you said you would do. The three things come back, each with the
+> moment you said it.
 
-## Updates
+## How it works
 
-While it is open, Poiesis looks every hour whether a newer version exists: it asks the
-release page for the newest version number and sends nothing about you. A newer one shows in
-the frame's corner; enter on the updates row in settings installs it, the same way Poiesis
-was installed, and starts it again. Settings can turn the look off. `poiesis update` does it
-from a terminal. Every download is checked against the release's checksums first.
+1. **Talk.** Press space, say what is on your mind, press enter. Three minutes at most, and
+   you can pause when life interrupts.
+2. **It listens.** Speech to text runs on your Mac, in Swedish and English, even both in one
+   entry.
+3. **It sorts what you said.** What happened, what you decided, what you mean to do, what you
+   felt. Each piece keeps your exact words and its second in the clip, and lands with the
+   person, place or mission it belongs to. Nothing to tag.
+4. **It comes back.** Open an entry, and what you said earlier about the same people and
+   plans is right below it.
 
-## What you get
+<p align="center">
+  <img src="docs/images/entry.png" width="880" alt="An entry: the words with their times, what each line was (an event, an intention, a belief, a decision), and below it what was said earlier about the same people.">
+</p>
 
-- **The record screen.** Camera on, a timer, your mission's name, the audio meter. Space
-  starts, space pauses when life interrupts, enter completes. Three minutes at most.
-- **The log.** Every entry under its day, a search bar that searches what you said, your
-  missions as buttons. Enter opens an entry: the words with their times, the claims in
-  the margin, and what you said earlier about the same people and things.
-- **Your files.** `~/Documents/Poiesis Vault`: one markdown page per entry, one page per
-  person, project or mission, and one file of claims. Obsidian opens it. So does grep.
-- **The AI connection.** `poiesis setup --mcp` lets Claude Code read the log; other apps get
-  their lines from `poiesis mcp --connect`. Four verbs, all read-only: orient, search, read,
-  moment. Ask "what did I say about the bakery in August, and play the moment."
+Search everything you have ever said, across days:
+
+<p align="center">
+  <img src="docs/images/search.png" width="880" alt="A search for oven finds the moment in two entries on two days.">
+</p>
+
+Then ask the AI you already use, Claude, Cursor or any app that speaks MCP: *what did I say
+about the bakery in August?* It answers from your log and plays the moment.
+
+<sub>The pictures show a fictional demo log.</sub>
+
+## Your files
+
+Your log is a folder of plain files. Open it with anything: Obsidian opens it, so does grep.
+
+```
+Poiesis Vault/
+  episodes/2026-09-23-a.md             the entry: your words, with their times
+  episodes/2026-09-23-a.claims.jsonl   what you did, decided and felt, each with its second
+  entities/erik.md                     everything you said about Erik, over time
+  raw/2026/09/…mp4                     the recording, the truth every page is rebuilt from
+```
+
+The format is open ([docs/FORMAT.md](docs/FORMAT.md), MIT licensed), so any tool can read and
+write a Poiesis log, your own AI connection included.
 
 ## The promise
 
-Recording, speech to text and the extraction of claims run on your computer. Two things
-reach the network: the models, downloaded once on first use, and the hourly version check,
-which settings can turn off. One choice sends words away: in settings you can switch
-extraction to your own Claude key; then the words of each entry are sent to Anthropic under
-your account. Video and sound never go anywhere. An AI app you connect reads the text it asks
-for. Your folder follows your own backup and sync settings. The settings page says what is
-on, in one line, at the top.
+- **It runs on your computer:** the recording, the words, the sorting.
+- **Video and sound never leave it.**
+- **Your choice:** add your own Claude key for a stronger model. Then an entry's words go to
+  Anthropic, never the video.
+- **Any AI you connect can read your log. None can change it.**
+- **Your folder follows your own backup and sync,** for example iCloud.
+- **Free and open source. Your words are never sold.**
 
-## The files, the format, the AI connection
+Exactly what reaches the network, and when: [docs/INSTALL.md](docs/INSTALL.md#what-reaches-the-network).
 
-`docs/FORMAT.md` explains the vault in plain words with examples. The format is MIT licensed
-(`LICENSES/MIT.txt`), so any tool can read and write Poiesis vaults freely, your own AI
-connection included. The app is AGPL-3.0 (`LICENSE`). The name and the mark are covered by
-`TRADEMARK.md`. The tools inside the app and their licences are listed in `NOTICE.md`.
+## Install
 
-## Made of
+On a Mac with Apple silicon and macOS 14 or later, paste one line into Terminal:
 
-Go, Bubble Tea for the screens, whisper.cpp for speech to text, Ollama with a small local
-model for the claims, ffmpeg for video and sound. Each system gets a small window program
-that draws the camera under the text and records it with the system's own encoder: Swift and
-SwiftTerm on a Mac (`hosts/mac`), C on GTK 4, VTE and GStreamer on Linux (`hosts/linux`).
-`docs/ARCHITECTURE.md` explains the layers and `docs/HOST.md` the contract between them. All
-open source, all credited in `NOTICE.md`.
+```sh
+curl -fsSL https://raw.githubusercontent.com/alexandrwilder/poiesis/main/install.sh | sh
+```
 
-## Contributing
+Then press space, talk, press enter. Tonight is entry one.
 
-`CONTRIBUTING.md` has the map of the code, the four places made to be extended (themes,
-looks, extractors, missions), and the one rule: nothing about extraction ships without a
-score on the gold set.
+Other ways to install, what it needs, updates and how to remove it:
+[docs/INSTALL.md](docs/INSTALL.md). Linux and Windows are next.
+
+## Made in the open
+
+Poiesis is free and open source ([AGPL-3.0](LICENSE)), and the log's format is
+[MIT](LICENSES/MIT.txt). It is built with Go, whisper.cpp, Ollama and a small native window
+for each system: [how it is built](docs/ARCHITECTURE.md).
+
+Want to help? Start with a
+[good first issue](https://github.com/alexandrwilder/poiesis/labels/good%20first%20issue) and
+read [CONTRIBUTING](CONTRIBUTING.md). Every tool inside the app is credited in [NOTICE](NOTICE.md).
+The name and the mark: [TRADEMARK](TRADEMARK.md).
+Found a security problem: [SECURITY](SECURITY.md).
+
+Made by Alexander Adolfsson in Stockholm. *Poiesis* is said poy-EE-sis, the Greek word for
+making.
