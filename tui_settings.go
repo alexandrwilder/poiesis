@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -16,12 +15,14 @@ import (
 // is saved at once. The badge at the top says whether anything leaves this computer.
 
 type settingsState struct {
-	cursor int
-	video  []avDevice
-	audio  []avDevice
-	loaded bool
-	path   textinput.Model
-	moving bool
+	cursor  int
+	video   []avDevice
+	audio   []avDevice
+	loaded  bool
+	path    textinput.Model
+	moving  bool
+	apps    []aiApp // the AI apps that can read this log (aiapps.go), read when settings opens
+	closing int     // 1 + the app whose door waits for a second enter; 0 for none
 }
 
 var languages = []string{"auto", "sv", "en"}
@@ -50,6 +51,29 @@ func (m *tuiModel) enterSettings() {
 	}
 	if st.path.Placeholder == "" {
 		st.path = newInput("folder for your log")
+	}
+	st.apps, st.closing = connectedAIApps(), 0
+}
+
+// closeAIDoor is enter on an AI app's row, twice: that app can no longer read the log.
+func (m *tuiModel) closeAIDoor(i int) {
+	st := &m.settings
+	a := st.apps[i]
+	if st.closing != i+1 {
+		st.closing = i + 1
+		m.status = "enter again closes the door: " + a.name + " will no longer read your log"
+		return
+	}
+	st.closing = 0
+	if err := closeDoor(a); err != nil {
+		m.status = "could not close the door for " + a.name + ": " + err.Error()
+		return
+	}
+	st.apps = connectedAIApps()
+	st.cursor = min(st.cursor, rowCount-1+len(st.apps))
+	m.status = a.name + " can no longer read your log (it lets go when it starts again)"
+	if !a.cli {
+		m.status += " · its settings as they were: " + filepath.Base(a.config) + ".before-poiesis-removed"
 	}
 }
 
@@ -83,6 +107,12 @@ func (m *tuiModel) updateSettings(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 	}
 	c := &m.v.Config
+	if key.String() != "enter" {
+		st.closing = 0 // a door waits for a second enter, not for any key
+	}
+	if st.cursor >= rowCount && !strings.Contains(" enter up k down j esc tab s q ", " "+key.String()+" ") {
+		return m, nil // an AI app's row takes enter, moving and leaving, nothing else
+	}
 	switch key.String() {
 	case "esc", "tab", "s", "q":
 		return m, m.enterRecord()
@@ -91,10 +121,14 @@ func (m *tuiModel) updateSettings(msg tea.Msg) (tea.Model, tea.Cmd) {
 			st.cursor--
 		}
 	case "down", "j":
-		if st.cursor < rowCount-1 {
+		if st.cursor < rowCount-1+len(st.apps) {
 			st.cursor++
 		}
 	case "enter":
+		if st.cursor >= rowCount {
+			m.closeAIDoor(st.cursor - rowCount)
+			return m, nil
+		}
 		if st.cursor == rowAI {
 			return m, m.connectAI()
 		}
@@ -291,7 +325,7 @@ func (m *tuiModel) viewSettings() string {
 		{"language", c.Language, "auto · sv · en"},
 		{"entry limit", mmss(float64(limit)), "an entry completes itself here"},
 		{"log folder", m.v.Root, "enter to move it"},
-		{"your AI apps", aiStatus(), "enter connects Claude Code and writes CONNECT.md in your log for Desktop and Cursor"},
+		{"your AI apps", aiAppNames(st.apps), "enter connects Claude Code and writes CONNECT.md in your log for Desktop and Cursor"},
 		{"updates", updatesValue(c, m.update), "on: every hour while open it asks github.com for the newest version number, and sends nothing about you · enter looks now, or installs"},
 	}
 	for i, r := range rows {
@@ -308,6 +342,20 @@ func (m *tuiModel) viewSettings() string {
 			line += sDim.Render("   " + r.note)
 		}
 		b.WriteString(cut(line, m.inner()) + "\n")
+	}
+	for j, a := range st.apps { // the doors: one row per AI app that can read the log
+		cur, lab := "  ", sDim
+		if rowCount+j == st.cursor {
+			cur, lab = sCursor.Render("▶ "), sMid
+		}
+		line := cur + lab.Render(padRight("  · "+a.name, 13)) + sInk.Render("reads your whole log")
+		if rowCount+j == st.cursor {
+			line += sDim.Render("   enter twice closes this door")
+		}
+		b.WriteString(cut(line, m.inner()) + "\n")
+	}
+	if len(st.apps) > 0 {
+		b.WriteString(sDim.Render("  an AI that can open files, such as Claude Code in a folder, can also read the log folder itself") + "\n")
 	}
 	if st.moving {
 		b.WriteString("\n" + sDim.Render("  type the folder, enter to move, esc to keep it. an existing empty folder is used as is.") + "\n")
@@ -361,18 +409,6 @@ func videoMode(c Config) string {
 	return "clear"
 }
 
-// aiStatus says whether Claude Code knows this log.
-func aiStatus() string {
-	if _, err := exec.LookPath("claude"); err != nil {
-		return "not connected  (Claude Code not installed; CONNECT.md has the lines for other apps)"
-	}
-	out, _ := exec.Command("claude", "mcp", "get", "poiesis").CombinedOutput()
-	if strings.Contains(string(out), "poiesis") && !strings.Contains(strings.ToLower(string(out)), "not found") {
-		return "Claude Code connected"
-	}
-	return "not connected  (enter)"
-}
-
 // connectAI registers the log with Claude Code and leaves the lines for the other apps.
 func (m *tuiModel) connectAI() tea.Cmd {
 	lines := connectText(m.v)
@@ -381,6 +417,7 @@ func (m *tuiModel) connectAI() tea.Cmd {
 		m.status = "wrote CONNECT.md in your log · " + err.Error()
 		return nil
 	}
+	m.settings.apps = connectedAIApps()
 	m.status = "Claude Code connected · CONNECT.md in your log has the lines for Desktop and Cursor"
 	return nil
 }

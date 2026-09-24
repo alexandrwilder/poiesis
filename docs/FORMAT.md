@@ -20,6 +20,7 @@ examples. The contract the app follows is `SCHEMA.md` inside the vault itself.
       episodes/
         2026-09-02-a.md                   one page per entry
         2026-09-02-a.claims.jsonl         that entry's claims, one per line
+        2026-09-02-a.corrections.jsonl    the claims the person marked wrong, one mark per line
       entities/
         erik.md                           one page per person, project, mission, place …
       trash/                      entries you removed: page, video, claims, moved not deleted
@@ -81,6 +82,17 @@ One line of `episodes/2026-09-02-a.claims.jsonl`:
 - `supersedes`, `valid_to`, `due` and `outcome` are kept for a claim that replaces, ends or
   settles an older one. They are part of the format; the app does not fill them in yet.
 - `source` is the moment: the entry and the seconds. `poiesis://2026-09-02-a?t=6.4` opens it.
+
+## A correction
+
+After an entry the app shows what it heard, and the person can mark a claim wrong. The mark is
+appended to `episodes/<entry>.corrections.jsonl`, never written into the claims:
+
+    {"claim":"01K5…","wrong":true,"at":"2026-09-24T20:14:03+02:00"}
+
+The latest mark of a claim wins, so a mark can be taken back with `"wrong":false`. A claim
+marked wrong is left out of everything that brings words back: the entry's page, the pages of
+people and things, search, and every AI verb.
 
 ## A page for a person or thing
 

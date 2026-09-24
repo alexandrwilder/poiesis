@@ -22,6 +22,7 @@ type tuiData struct {
 }
 
 type dataReloadedMsg struct {
+	readback  bool // open the entry on its read-back: it was just processed
 	data      *tuiData
 	entities  map[string]*Entity // the people and things as the reload read them
 	status    string

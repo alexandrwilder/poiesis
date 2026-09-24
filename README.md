@@ -48,7 +48,8 @@ back when the same people, places and plans come up again.
    entry.
 3. **It sorts what you said.** What happened, what you decided, what you mean to do, what you
    felt. Each piece keeps your exact words and its second in the clip, and lands with the
-   person, place or mission it belongs to. Nothing to tag.
+   person, place or mission it belongs to. Nothing to tag. Then it shows you what it heard,
+   and `w` marks anything it got wrong: that never comes back.
 4. **It comes back.** Open an entry, and what you said earlier about the same people and
    plans is right below it.
 
@@ -91,7 +92,8 @@ You only talk freely where you know no one else is listening. So:
 
 - **It runs on your computer:** the recording, the words, the sorting.
 - **Video and sound never leave it.**
-- **Any AI you connect can read your log. None can change it.**
+- **Any AI you connect can read your log. None can change it.** Settings shows which ones
+  can, and closes the door.
 - **An AI can open Poiesis ready when you ask. Only you press record.**
 - **Your folder stays on your Mac.** Time Machine backs it up; move it into iCloud Drive from
   settings if you want it on your phone.

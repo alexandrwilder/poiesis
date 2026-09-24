@@ -207,6 +207,7 @@ func (m *tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if e.ID == msg.openEntry {
 					m.entries.cursor = i
 					m.openEntry(i)
+					m.entry.readback = msg.readback
 					break
 				}
 			}
@@ -280,9 +281,22 @@ func (m *tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.status = m.record.lastErr
 			return m, nil
 		}
-		return m, reloadCmd(m.v, joinNotes(fmt.Sprintf("entry %s ready: %d claims", msg.ep.ID, msg.ep.ClaimCount), msg.note), msg.ep.ID)
+		reload := reloadCmd(m.v, joinNotes(fmt.Sprintf("entry %s ready: %d claims · w marks what I got wrong", msg.ep.ID, msg.ep.ClaimCount), msg.note), msg.ep.ID)
+		return m, func() tea.Msg { // the new entry opens on what the log heard
+			r := reload()
+			if d, ok := r.(dataReloadedMsg); ok {
+				d.readback = true
+				return d
+			}
+			return r
+		}
 	case askDoneMsg:
 		return m.updateAsk(msg)
+	case pagesRebuiltMsg:
+		if msg.err != nil {
+			m.status = "the pages could not be rewritten: " + msg.err.Error()
+		}
+		return m, nil
 	case externalCmdMsg:
 		if msg != "" {
 			return m, tea.Batch(m.follow(string(msg)), watchCommandCmd())
@@ -411,7 +425,10 @@ func (m *tuiModel) hints() []keyHint {
 		if m.entry.mission.open {
 			return hintsOf("↑↓", "choose", "enter", "set", "n", "new", "esc", "cancel")
 		}
-		return hintsOf("enter", "play", "p", "play all", "space", "earlier", "e", "person", "M", "mission", "x", "trash", "a", "ask", "esc", "back")
+		if m.entry.readback {
+			return hintsOf("↑↓", "choose", "w", "wrong", "enter", "play", "r", "the words", "esc", "back")
+		}
+		return hintsOf("enter", "play", "p", "play all", "space", "earlier", "r", "what I heard", "e", "person", "M", "mission", "x", "trash", "a", "ask", "esc", "back")
 	case screenAsk:
 		if m.ask.typing {
 			return hintsOf("", "type your question", "enter", "ask", "esc", "cancel")

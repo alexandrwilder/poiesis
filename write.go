@@ -446,24 +446,19 @@ func AllClaims(v *Vault) ([]Claim, error) {
 	}
 	var all []Claim
 	for _, p := range matches {
-		f, err := os.Open(p)
+		claims, err := readClaimsFile(p)
 		if err != nil {
 			return nil, err
 		}
-		sc := bufio.NewScanner(f)
-		sc.Buffer(make([]byte, 1<<20), 1<<20)
-		for sc.Scan() {
-			if strings.TrimSpace(sc.Text()) == "" {
-				continue
-			}
-			var c Claim
-			if err := json.Unmarshal(sc.Bytes(), &c); err != nil {
-				f.Close()
-				return nil, fmt.Errorf("%s: %w", filepath.Base(p), err)
-			}
-			all = append(all, c)
+		wrong, err := wrongClaims(v, strings.TrimSuffix(filepath.Base(p), ".claims.jsonl"))
+		if err != nil {
+			return nil, err
 		}
-		f.Close()
+		for _, c := range claims {
+			if !wrong[c.ID] { // the person said this was not what they said: it never comes back
+				all = append(all, c)
+			}
+		}
 	}
 	sort.Slice(all, func(i, j int) bool {
 		if all[i].StatedAt != all[j].StatedAt {

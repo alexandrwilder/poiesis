@@ -18,6 +18,10 @@ type entryState struct {
 	claims   []Claim
 	cursor   listState
 	earlier  bool
+	readback bool            // the read-back: what the log understood from this entry
+	heard    []Claim         // every claim of this entry, wrong ones included, in the order said
+	wrong    map[string]bool // the claims the person marked wrong
+	heardC   listState
 	earlierL []Claim
 	earlierC listState
 	loadErr  string
@@ -50,6 +54,12 @@ func (m *tuiModel) openEntry(i int) {
 		}
 	}
 	st.earlierL = m.data.earlierClaims(e)
+	if heard, wrong, err := heardIn(m.v, e.ID); err == nil {
+		st.heard, st.wrong = heard, wrong
+	} else {
+		st.wrong = map[string]bool{}
+		m.status = "the read-back could not be read: " + err.Error()
+	}
 	m.entry = st
 	m.scr = screenEntry
 }
@@ -84,7 +94,27 @@ func (m *tuiModel) updateEntry(msg tea.Msg) (tea.Model, tea.Cmd) {
 		st.confirmX = false
 		m.status = "kept"
 	}
+	if st.readback {
+		switch k {
+		case "w":
+			return m, m.markHeard()
+		case "r", "esc", "q":
+			st.readback = false
+			return m, nil
+		case "enter":
+			if st.heardC.cursor < len(st.heard) {
+				m.status, _ = playStatus(m.v, st.ep.Media, st.heard[st.heardC.cursor].Source.Start)
+			}
+			return m, nil
+		case "up", "down", "k", "j", "pgup", "pgdown", "home", "end":
+			moveCursor(&st.heardC, k, len(st.heard))
+			return m, nil
+		}
+	}
 	switch k {
+	case "r":
+		st.readback, st.earlier = true, false
+		return m, nil
 	case "esc", "q":
 		if st.earlier {
 			st.earlier = false
@@ -183,6 +213,10 @@ func (m *tuiModel) viewEntry() string {
 		b.WriteString(st.mission.view())
 	}
 	h := m.bodyHeight() - 2 - st.mission.lines()
+	if st.readback {
+		m.viewHeard(&b, h-2)
+		return b.String()
+	}
 	if st.earlier {
 		h = h / 2
 	}
