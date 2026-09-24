@@ -87,3 +87,28 @@ func TestSettingsClosesADoorOnTheSecondEnter(t *testing.T) {
 		t.Fatalf("the second enter did not close the door: %s", b)
 	}
 }
+
+// A settings file kept elsewhere and linked into place (dotfiles) is changed where it lives,
+// and the link stays a link.
+func TestTheDoorEditsALinkedSettingsFile(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	real := filepath.Join(home, "dotfiles", "cursor-mcp.json")
+	writeJSON(t, real, `{"mcpServers":{"poiesis":{"command":"poiesis"},"notes":{"command":"notes-server"}}}`)
+	link := filepath.Join(home, ".cursor", "mcp.json")
+	if err := os.MkdirAll(filepath.Dir(link), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(real, link); err != nil {
+		t.Fatal(err)
+	}
+	if err := closeDoor(aiApp{name: "Cursor", config: link}); err != nil {
+		t.Fatal(err)
+	}
+	if fi, err := os.Lstat(link); err != nil || fi.Mode()&os.ModeSymlink == 0 {
+		t.Fatalf("the link became a plain file: %v", err)
+	}
+	if b, _ := os.ReadFile(real); strings.Contains(string(b), "poiesis") || !strings.Contains(string(b), "notes-server") {
+		t.Fatalf("the linked file: %s", b)
+	}
+}

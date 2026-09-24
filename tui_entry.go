@@ -102,7 +102,7 @@ func (m *tuiModel) updateEntry(msg tea.Msg) (tea.Model, tea.Cmd) {
 			st.readback = false
 			return m, nil
 		case "enter":
-			if st.heardC.cursor < len(st.heard) {
+			if st.heardC.cursor >= 0 && st.heardC.cursor < len(st.heard) {
 				m.status, _ = playStatus(m.v, st.ep.Media, st.heard[st.heardC.cursor].Source.Start)
 			}
 			return m, nil

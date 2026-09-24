@@ -113,7 +113,7 @@ func heardIn(v *Vault, epID string) ([]Claim, map[string]bool, error) {
 // pages and the window up to date, so the mark counts at once.
 func (m *tuiModel) markHeard() tea.Cmd {
 	st := &m.entry
-	if st.heardC.cursor >= len(st.heard) {
+	if st.heardC.cursor < 0 || st.heardC.cursor >= len(st.heard) {
 		return nil
 	}
 	c := st.heard[st.heardC.cursor]
@@ -155,36 +155,54 @@ func rebuildPagesCmd(root, epID string) tea.Cmd {
 
 type pagesRebuiltMsg struct{ err error }
 
-// rewriteEntryPage writes an entry's page again with only the claims the person has not marked
-// wrong, so an AI reading the page never meets one. The page is derived: its words and claims
-// come from the transcript and the claims file, which stay as they are.
+// rewriteEntryPage writes the Claims section of an entry's page again with only the claims the
+// person has not marked wrong, so an AI reading the page never meets one. The rest of the page,
+// a note added by hand included, and every line of its header but the count, stays as it is.
 func rewriteEntryPage(v *Vault, epID string) error {
-	eps, err := loadEpisodes(v)
+	p := v.Path("episodes", epID+".md")
+	b, err := os.ReadFile(p)
 	if err != nil {
 		return err
 	}
-	for _, ep := range eps {
-		if ep.ID != epID {
-			continue
-		}
-		lines, err := transcriptLines(v, ep)
-		if err != nil {
-			return fmt.Errorf("the words of %s: %w", epID, err)
-		}
-		heard, wrong, err := heardIn(v, epID)
-		if err != nil {
-			return err
-		}
-		var kept []Claim
-		for _, c := range heard {
-			if !wrong[c.ID] {
-				kept = append(kept, c)
-			}
-		}
-		ep.ClaimCount = len(kept)
-		return writeEpisode(v, &ep, lines, kept)
+	heard, wrong, err := heardIn(v, epID)
+	if err != nil {
+		return err
 	}
-	return fmt.Errorf("no entry %s", epID)
+	var kept []Claim
+	for _, c := range heard {
+		if !wrong[c.ID] {
+			kept = append(kept, c)
+		}
+	}
+	page := string(b)
+	const head = "\n## Claims\n"
+	i := strings.Index(page, head)
+	if i < 0 {
+		return fmt.Errorf("the page of %s has no Claims section", epID)
+	}
+	tail := page[i+len(head):]
+	if j := strings.Index(tail, "\n## "); j >= 0 {
+		tail = tail[j:]
+	} else {
+		tail = "\n"
+	}
+	page = page[:i] + head + "\n" + claimsSection(epID, kept) + tail
+	return writeFileAtomic(p, []byte(withHeaderLine(page, "claims", fmt.Sprint(len(kept)))), 0o644)
+}
+
+// withHeaderLine sets one key in a page's header and leaves every other line as it is.
+func withHeaderLine(page, key, value string) string {
+	lines := strings.Split(page, "\n")
+	for i, l := range lines {
+		if i > 0 && l == "---" {
+			break // the end of the header
+		}
+		if strings.HasPrefix(l, key+":") {
+			lines[i] = key + ": " + value
+			return strings.Join(lines, "\n")
+		}
+	}
+	return page
 }
 
 // viewHeard is the read-back's list: what the log understood, each with its kind and second.

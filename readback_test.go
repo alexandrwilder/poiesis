@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -107,15 +108,21 @@ func TestANewEntryOpensOnWhatWasHeard(t *testing.T) {
 	}
 }
 
-// The entry's own page, which an AI can read whole, is written again without the claim the
-// person marked wrong; its words stay.
+// The entry's own page, which an AI can read whole, loses the claim the person marked wrong;
+// everything else on it stays, a note added by hand and an unknown header line included.
 func TestAWrongClaimLeavesTheEntrysPage(t *testing.T) {
 	v := logWithTwoClaims(t)
-	transcript := `{"transcription":[{"text":"alla älskade grytan","offsets":{"from":3000,"to":5000}},{"text":"jag tror kanske att sälja","offsets":{"from":9000,"to":12000}}]}`
-	if err := os.WriteFile(v.Path("raw", "t.words.json"), []byte(transcript), 0o644); err != nil {
+	heard, _, err := heardIn(v, "2026-09-24-a")
+	if err != nil {
 		t.Fatal(err)
 	}
-	page := "---\nid: 2026-09-24-a\nday: 1\nrecorded_at: \"2026-09-24T20:00:00+02:00\"\nduration_s: 60\ntranscript: raw/t.words.json\nclaims: 2\n---\n"
+	ep := &Episode{ID: "2026-09-24-a", Day: 1, RecordedAt: "2026-09-24T20:00:00+02:00", DurationS: 60, ClaimCount: 2}
+	lines := []Line{{Start: 3, Text: "alla älskade grytan"}, {Start: 9, Text: "jag tror kanske att sälja"}}
+	if err := writeEpisode(v, ep, lines, heard); err != nil {
+		t.Fatal(err)
+	}
+	b, _ := os.ReadFile(v.Path("episodes", "2026-09-24-a.md"))
+	page := strings.Replace(string(b), "day: 1\n", "day: 1\nmood: calm\n", 1) + "\n## My note\n\nCall grandmother about the recipe.\n"
 	if err := os.WriteFile(v.Path("episodes", "2026-09-24-a.md"), []byte(page), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -125,11 +132,61 @@ func TestAWrongClaimLeavesTheEntrysPage(t *testing.T) {
 	if msg := rebuildPagesCmd(v.Root, "2026-09-24-a")(); msg.(pagesRebuiltMsg).err != nil {
 		t.Fatal(msg.(pagesRebuiltMsg).err)
 	}
-	b, _ := os.ReadFile(v.Path("episodes", "2026-09-24-a.md"))
-	if strings.Contains(string(b), "sell the bakery") || !strings.Contains(string(b), "loved the stew") || !strings.Contains(string(b), "jag tror kanske att sälja") {
-		t.Fatalf("the entry's page:\n%s", b)
+	b, _ = os.ReadFile(v.Path("episodes", "2026-09-24-a.md"))
+	got := string(b)
+	for _, want := range []string{"loved the stew", "jag tror kanske att sälja", "mood: calm", "Call grandmother about the recipe.", "claims: 1"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("the page lost %q:\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, "sell the bakery") {
+		t.Errorf("the page still holds the wrong claim:\n%s", got)
 	}
 	if s, _ := v.mcpRead("2026-09-24-a"); strings.Contains(s, "sell the bakery") {
 		t.Fatal("an AI reading the page still meets the wrong claim")
+	}
+}
+
+// An entry with nothing sorted out of it: the read-back says so, and no key stops the app.
+func TestTheReadBackOfAnEntryWithoutClaims(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	v, err := OpenVault(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	page := "---\nid: 2026-09-24-b\nday: 1\nrecorded_at: \"2026-09-24T21:00:00+02:00\"\nduration_s: 30\n---\n"
+	if err := os.WriteFile(v.Path("episodes", "2026-09-24-b.md"), []byte(page), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	d, err := loadTUIData(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := &tuiModel{v: v, data: d}
+	m.openEntry(0)
+	m.updateEntry(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("r")})
+	for _, k := range []tea.KeyMsg{{Type: tea.KeyEnd}, {Type: tea.KeyPgDown}, {Type: tea.KeyEnter}, {Type: tea.KeyRunes, Runes: []rune("w")}} {
+		m.updateEntry(k)
+		if m.entry.heardC.cursor != 0 {
+			t.Fatalf("after %s the cursor left the list: %d", k.String(), m.entry.heardC.cursor)
+		}
+	}
+}
+
+// An entry moved to the trash takes the person's marks with it.
+func TestTheMarksGoToTheTrashWithTheEntry(t *testing.T) {
+	v := logWithTwoClaims(t)
+	if err := markClaim(v, "2026-09-24-a", "wrong", true, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	if err := TrashEntry(v, Episode{ID: "2026-09-24-a"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(correctionsPath(v, "2026-09-24-a")); !os.IsNotExist(err) {
+		t.Fatal("the marks stayed behind in episodes/")
+	}
+	found, _ := filepath.Glob(v.Path("trash", "*_2026-09-24-a", "2026-09-24-a.corrections.jsonl"))
+	if len(found) != 1 {
+		t.Fatalf("the marks are not in the trash: %v", found)
 	}
 }

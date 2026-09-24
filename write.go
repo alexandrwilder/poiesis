@@ -403,21 +403,28 @@ func writeEpisode(v *Vault, ep *Episode, lines []Line, claims []Claim) error {
 		fmt.Fprintf(&b, " · mission [[%s]]", ep.Mission)
 	}
 	b.WriteString("\n\n## Claims\n\n")
-	if len(claims) == 0 {
-		b.WriteString("_none_\n")
-	}
-	for _, c := range claims {
-		links := make([]string, len(c.About))
-		for i, id := range c.About {
-			links[i] = "[[" + id + "]]"
-		}
-		fmt.Fprintf(&b, "- **%s** [%s](poiesis://%s?t=%.1f) %s — \"%s\" · %s\n", c.Kind, mmss(c.Source.Start), ep.ID, c.Source.Start, c.Text, c.Quote, strings.Join(links, " "))
-	}
+	b.WriteString(claimsSection(ep.ID, claims))
 	b.WriteString("\n## Transcript\n\n")
 	for _, l := range lines {
 		fmt.Fprintf(&b, "[%s] %s\n", mmss(l.Start), l.Text)
 	}
 	return writeFileAtomic(v.Path("episodes", ep.ID+".md"), []byte(b.String()), 0o644)
+}
+
+// claimsSection is the body of an entry page's Claims section, one line per claim.
+func claimsSection(epID string, claims []Claim) string {
+	if len(claims) == 0 {
+		return "_none_\n"
+	}
+	var b strings.Builder
+	for _, c := range claims {
+		links := make([]string, len(c.About))
+		for i, id := range c.About {
+			links[i] = "[[" + id + "]]"
+		}
+		fmt.Fprintf(&b, "- **%s** [%s](poiesis://%s?t=%.1f) %s — \"%s\" · %s\n", c.Kind, mmss(c.Source.Start), epID, c.Source.Start, c.Text, c.Quote, strings.Join(links, " "))
+	}
+	return b.String()
 }
 
 func writeClaims(v *Vault, epID string, claims []Claim) error {

@@ -96,6 +96,9 @@ func closeDoor(a aiApp) error {
 	if err != nil || len(names) == 0 {
 		return err
 	}
+	if real, err := filepath.EvalSymlinks(a.config); err == nil {
+		a.config = real // a linked settings file is changed where it lives, and the link stays
+	}
 	b, err := os.ReadFile(a.config)
 	if err != nil {
 		return err

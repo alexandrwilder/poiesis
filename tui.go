@@ -528,14 +528,14 @@ func moveCursor(ls *listState, key string, total int) bool {
 	case "pgdown":
 		ls.cursor += 10
 		if ls.cursor > total-1 {
-			ls.cursor = total - 1
+			ls.cursor = max(0, total-1)
 		}
 		return true
 	case "home", "g":
 		ls.cursor = 0
 		return true
 	case "end", "G":
-		ls.cursor = total - 1
+		ls.cursor = max(0, total-1) // an empty list keeps its cursor on row 0
 		return true
 	}
 	return false

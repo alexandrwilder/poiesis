@@ -31,7 +31,7 @@ types and fields it does not know. Fields are only ever added.
 
 The first message each way:
 
-    core → host   {"t":"hello","versions":[1],"app":"poiesis 0.1.0"}
+    core → host   {"t":"hello","versions":[1],"app":"poiesis 0.2.0"}
     host → core   {"t":"hello","version":1,"host":"poiesis-mac 0.1","can":["picture","look","record","level"]}
 
 `can` lists what the host does. The core uses nothing that is not in it. With no shared

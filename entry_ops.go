@@ -70,8 +70,11 @@ func TrashEntry(v *Vault, ep Episode) error {
 			return err
 		}
 	}
-	// 3. the claims: the entry's own file, moved along with it
+	// 3. the claims and the person's marks on them, moved along with it
 	if err := moveIfExists(v.Path("episodes", ep.ID+".claims.jsonl"), filepath.Join(dir, ep.ID+".claims.jsonl")); err != nil {
+		return err
+	}
+	if err := moveIfExists(correctionsPath(v, ep.ID), filepath.Join(dir, ep.ID+".corrections.jsonl")); err != nil {
 		return err
 	}
 	if err := rebuildEntityPages(v); err != nil {
