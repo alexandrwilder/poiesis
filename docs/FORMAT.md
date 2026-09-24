@@ -15,6 +15,8 @@ examples. The contract the app follows is `SCHEMA.md` inside the vault itself.
         2026-09-02T14-34_288b….mp4        the video, named by time and content hash
         2026-09-02T14-34_288b….json       what was known at recording time
         2026-09-02T14-34_288b….words….json  every word with its second
+        2026-09-02T14-34_288b….wav          the sound the words were heard from, a cache
+        ….silent  ….log  ….extract.jsonl    no words were heard; what the speech model and the sorting did
       episodes/
         2026-09-02-a.md                   one page per entry
         2026-09-02-a.claims.jsonl         that entry's claims, one per line
@@ -76,8 +78,9 @@ One line of `episodes/2026-09-02-a.claims.jsonl`:
 - `about` names the pages this claim belongs to.
 - `stated_at` is when it was said; `extracted_at` and `extractor` say who wrote it down
   and when. Two times, so a re-extraction is never confused with a new statement.
-- `supersedes` points at an older claim this one replaces. Nothing is deleted.
-- `source` is the moment: the entry and the seconds. `poiesis://2026-09-02-a?t=6.4` plays it.
+- `supersedes`, `valid_to`, `due` and `outcome` are kept for a claim that replaces, ends or
+  settles an older one. They are part of the format; the app does not fill them in yet.
+- `source` is the moment: the entry and the seconds. `poiesis://2026-09-02-a?t=6.4` opens it.
 
 ## A page for a person or thing
 
@@ -126,11 +129,11 @@ for Claude Desktop and Cursor. Five verbs:
 | `orient` | the shape of the vault: how many entries, which missions and people, the last days, the contract | first, always, once |
 | `search` | claims and transcript lines that match words, with filters for dates, kind, person, mission | "what did I say about the oven in August" |
 | `read` | one page as it is: an entry, a person, the index, the schema, the log | when a hit needs its context |
-| `moment` | the words around one second of one entry, and the link that plays it | "play the moment I said that" |
-| `record` | opens Poiesis on the record screen, ready, with a line to talk about. The person presses space | "I want to log how the launch went" |
+| `moment` | the words around one second of one entry, and the link that opens it | "show me the moment I said that" |
+| `record` | opens Poiesis on the record screen, ready, with a line to talk about and the camera off. The person's first key turns it on; space records | "I want to log how the launch went" |
 
 Answers are capped so the AI never drowns: 16,000 characters, 50 hits. A good first
-question: "Orient yourself in my log, then tell me what I said about X and play the
+question: "Orient yourself in my log, then tell me what I said about X and show me the
 moment."
 
 ## Links
@@ -144,12 +147,13 @@ On a Mac with the app they work wherever links work. Everywhere, `poiesis open <
 the same. `about` is one line of at most 120 letters: shown on the record screen and saved as
 the entry's `prompt`. Anything else is refused.
 
-A link never starts a recording. Opening the record screen is as far as any link, script or
-AI goes: the person presses space. A link that arrives while an entry is being recorded is
+A link never starts a recording, and never turns the camera on. Opening the record screen,
+with the camera off, is as far as any link, script or AI goes: the person's first key turns
+the camera on, and space records. A link that arrives while an entry is being recorded is
 not followed.
 
 ## Changing the format
 
 The format is MIT licensed so other tools can use it. Changes are additive: new fields
 may appear, existing ones keep their meaning, old vaults always open. `SCHEMA.md` inside
-each vault states the version it was written under.
+each vault explains the format as it was when that vault was made.

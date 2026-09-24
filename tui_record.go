@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -28,6 +29,7 @@ type recordState struct {
 	confirmDiscard bool
 	about          string // what this entry is to be about, from a record link: shown, then saved as prompt
 	processing     bool
+	pending        int // entries completed and not yet processed; they go one at a time
 	procStart      time.Time
 	completed      string // "DAY 0412 · 03:41" shown after completing, until the entry appears
 	sentFrame      int    // the camera frame last sent as a picture, and the window it was sent for
@@ -117,12 +119,15 @@ func (m *tuiModel) pictureMayStart() bool {
 	return m.reflectionOn() && m.record.cap == nil && !m.record.processing
 }
 
+// cameraOpener starts the camera for the picture; a test puts a fake in its place.
+var cameraOpener = openCamera
+
 func (m *tuiModel) startPreview() {
 	if !m.pictureMayStart() {
 		return
 	}
 	w, h := m.previewSize()
-	if c, err := openCamera(m.v, captureOptions{PreviewW: w, PreviewH: h, PreviewFPS: m.previewFPS()}); err == nil {
+	if c, err := cameraOpener(m.v, captureOptions{PreviewW: w, PreviewH: h, PreviewFPS: m.previewFPS()}); err == nil {
 		m.record.cap = c
 	} else {
 		m.record.lastErr = "no preview: " + err.Error()
@@ -152,6 +157,23 @@ func (m *tuiModel) enterRecord() tea.Cmd {
 	return tickCmd()
 }
 
+// enterRecordResting opens the record screen ready with the camera off. A link, a script or
+// an AI brought the person here, so the camera waits for their own first key.
+func (m *tuiModel) enterRecordResting() tea.Cmd {
+	if m.record.phase == "ready" {
+		m.stopCap()
+	}
+	m.scr = screenRecord
+	m.record.lastKey = time.Now()
+	m.record.mission.Blur()
+	if m.record.phase == "" {
+		m.record.phase = "ready"
+	}
+	m.record.resting = true
+	m.status = "the camera is off · any key turns it on, then space records"
+	return tickCmd()
+}
+
 // follow does what a Poiesis link asks (link.go): the record screen, ready, with the line to
 // talk about, or an entry at its moment. The recording itself is always started by the
 // person, and an entry being recorded is never interrupted or relabelled.
@@ -169,7 +191,7 @@ func (m *tuiModel) follow(s string) tea.Cmd {
 		}
 		m.record.about = l.about
 		if m.scr != screenRecord {
-			return m.enterRecord()
+			return m.enterRecordResting()
 		}
 		return nil
 	}
@@ -360,7 +382,7 @@ func (m *tuiModel) pauseEntry() {
 
 func (m *tuiModel) resumeEntry() {
 	if m.totalRecorded() >= m.maxEntry() {
-		m.status = "three minutes are up · enter completes this entry"
+		m.status = mmss(m.maxEntry().Seconds()) + " reached · enter completes this entry"
 		return
 	}
 	if m.startPart() {
@@ -388,6 +410,37 @@ func (m *tuiModel) totalRecorded() time.Duration {
 	return d
 }
 
+// processWaiting processes what an earlier session left behind (waitingRecordings), one at a
+// time, each on a vault of its own. Nothing is ever lost: an entry cut short by a quit or a
+// crash becomes an entry the next time the window opens.
+func (m *tuiModel) processWaiting() tea.Cmd {
+	items, err := m.v.waitingRecordings()
+	if err != nil {
+		m.status = "could not look for unfinished entries: " + err.Error()
+		return nil
+	}
+	if len(items) == 0 {
+		return nil
+	}
+	root := m.v.Root
+	m.record.processing = true
+	m.record.pending += len(items)
+	m.record.procStart = time.Now()
+	m.status = fmt.Sprintf("%d recording(s) from before were waiting · processing them now", len(items))
+	var cmds []tea.Cmd
+	for _, it := range items {
+		cmds = append(cmds, func() tea.Msg {
+			iv, err := OpenVault(root)
+			if err != nil {
+				return ingestDoneMsg{err: err}
+			}
+			ep, err := Ingest(context.Background(), iv, IngestOptions{File: it.file, KeepInbox: it.inRaw})
+			return ingestDoneMsg{ep: ep, err: err}
+		})
+	}
+	return tea.Batch(cmds...)
+}
+
 // completeEntry joins the parts into one clip in inbox/ and processes it in the background.
 func (m *tuiModel) completeEntry() tea.Cmd {
 	st := &m.record
@@ -400,20 +453,32 @@ func (m *tuiModel) completeEntry() tea.Cmd {
 	st.parts = nil
 	st.phase = "ready"
 	st.processing = true
+	st.pending++
 	st.procStart = time.Now()
 	st.completed = fmt.Sprintf("■ ENTRY COMPLETE  ·  %s", mmss(total.Seconds()))
 	m.status = ""
 	mission := strings.TrimSpace(st.mission.Value())
 	prompt := st.about
 	st.about = "" // the next entry starts without it
-	v := m.v
-	out := v.Path("inbox", time.Now().Format("2006-01-02T15-04-05")+".mp4")
+	root, ffmpeg := m.v.Root, findTool(m.v.Config.FFmpegBin)
+	out := m.v.Path("inbox", time.Now().Format("2006-01-02T15-04-05")+".mp4")
 	// no picture until the entry is processed (pictureMayStart); it comes back in ingestDoneMsg
 	return tea.Batch(tickCmd(), func() tea.Msg {
-		if err := concatSegments(findTool(v.Config.FFmpegBin), parts, out); err != nil {
+		// a vault of its own: the window's view of the log is never written under it
+		iv, err := OpenVault(root)
+		if err != nil {
 			return ingestDoneMsg{err: err}
 		}
-		ep, err := Ingest(context.Background(), v, IngestOptions{File: out, Mission: mission, Prompt: prompt})
+		if parts, err = readableParts(iv, parts); err != nil {
+			return ingestDoneMsg{err: err}
+		}
+		if len(parts) == 0 {
+			return ingestDoneMsg{err: errors.New("nothing in this entry's recording could be read; its parts are kept in inbox/.parts/unreadable")}
+		}
+		if err := concatSegments(ffmpeg, parts, out); err != nil {
+			return ingestDoneMsg{err: err}
+		}
+		ep, err := Ingest(context.Background(), iv, IngestOptions{File: out, Mission: mission, Prompt: prompt})
 		return ingestDoneMsg{ep: ep, err: err}
 	})
 }
@@ -534,6 +599,9 @@ func (m *tuiModel) recordOverlays() []overlayText {
 			} else {
 				what = "extracting"
 			}
+		}
+		if st.pending > 1 {
+			what += fmt.Sprintf("  ·  %d more waiting", st.pending-1)
 		}
 		overlays = append(overlays,
 			overlayText{row: row, col: 3, text: what, rgb: rgbAmber},

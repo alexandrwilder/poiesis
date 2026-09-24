@@ -45,14 +45,14 @@ which one in settings, and steps down on its own when the machine struggles.
 ## Rules that make it last
 
 - The vault format is the product; the code around it is replaceable.
-- Every recording is H.264 video and AAC audio in mp4: it plays everywhere, and the video is
+- Every recording Poiesis makes is H.264 video and AAC audio in mp4: it plays everywhere, and the video is
   the truth every page is rebuilt from.
 - The core runs without a host, in any terminal, on every system; a host only makes it better.
 - A host holds no log logic.
 - A camera has one owner: the host that shows it also records it.
 - A look is a colour matrix, defined once in the core and applied by every host.
-- The app follows the desktop it lives in: on Omarchy the theme comes from the desktop's own
-  theme; elsewhere from the app's themes.
+- The app follows the desktop it lives in: on Omarchy the theme is to come from the desktop's
+  own theme (planned, not built); elsewhere from the app's themes.
 - Every seam has a test that runs without the real thing: a fake host for the contract, a
   synthetic camera for the encoder, a clip with a hole in its audio for the timeline.
 - Costs are measured, not assumed; the numbers live next to the decisions.
@@ -73,7 +73,7 @@ The choices behind the contract, each replaceable without touching the core:
 
 | system | host | picture | recording | without a host |
 |---|---|---|---|---|
-| macOS | Swift and AppKit; the SwiftTerm text view with a transparent ground | the camera's frames, without a copy, in a display layer that is fed only when the picture moves | one capture session in the camera's own 720p format into an mp4 writer: hardware H.264, AAC | any terminal; Ghostty, kitty and WezTerm draw the picture |
+| macOS | Swift and AppKit; the SwiftTerm text view with a transparent ground | the camera's frames, without a copy, in a display layer that is fed only when the picture moves | one capture session, its picture scaled to 1280x720, into an mp4 writer: hardware H.264, AAC | any terminal; Ghostty, kitty and WezTerm draw the picture |
 | Linux, Omarchy first | GTK4 with the VTE text view, transparent ground, over a picture fed by GStreamer | PipeWire camera into GTK's video sink | the same pipeline, split: VA-API or NVENC H.264, x264 as fallback, AAC | the person's terminal: kitty graphics in Ghostty and kitty, sixel planned for Foot (Omarchy's default) |
 | Windows | a Go program around the system web view: xterm.js with a transparent ground over the camera in a video element, the core in a pseudo-console | the web view's camera, on the graphics chip | the web view's recorder into mp4: hardware H.264, AAC | Windows Terminal; sixel planned, the picture in characters until then |
 

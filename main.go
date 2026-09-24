@@ -51,7 +51,7 @@ func dumpScreen(m *tuiModel, name string) string {
 }
 
 // version is set by the release build (-ldflags "-X main.version=…"); this is the next one
-var version = "0.0.6"
+var version = "0.1.0"
 
 func usage() {
 	fmt.Fprintf(os.Stderr, `Poiesis %s
@@ -123,8 +123,8 @@ func main() {
 		os.Exit(2)
 	}
 
-	if r := bundleVault(); r != "" && *vaultDir == defaultVaultDir() {
-		*vaultDir = r // the vault the bundle was set up with
+	if r := bundleVault(); r != "" && *vaultDir == defaultVaultDir() && !fileThere(filepath.Join(appStateDir(), "vault.txt")) {
+		*vaultDir = r // the vault the bundle was set up with, unless the person chose another since
 	}
 	if cmd == "window" {
 		// do not touch the vault here: on a Mac the app that touches it is asked for

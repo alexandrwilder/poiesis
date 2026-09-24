@@ -8,7 +8,8 @@ write Poiesis vaults.
 
 The Mac app carries copies of these programs so that nothing has to be installed. They
 are unchanged except for being renamed or rewired to find their own libraries inside the
-app. Their licences travel with them; here is the list.
+app. Their licence texts are inside the app, in `Poiesis.app/Contents/Resources/licenses`, one
+folder per package with its version (for example `ffmpeg-9.0.2`).
 
 | what | why | licence | source |
 |---|---|---|---|
@@ -18,6 +19,11 @@ app. Their licences travel with them; here is the list.
 | the libraries ffmpeg loads | codecs and formats | each its own: x264 (GPL), libvpx (BSD), opus (BSD), lame (LGPL), and others; the exact files are in `Poiesis.app/Contents/Frameworks/lib` | |
 | whisper.cpp, ggml | speech to text | MIT, © Georgi Gerganov | github.com/ggml-org/whisper.cpp |
 | Ollama | runs the local AI model | MIT | github.com/ollama/ollama |
+
+**The source of the GPL and LGPL programs.** ffmpeg, x264 and the other GPL and LGPL
+libraries inside the app are Homebrew's builds of the upstream releases named by the folders in
+`licenses`. For three years after each release, the complete source of each of them, at that
+version, is yours on request: open an issue at github.com/alexandrwilder/poiesis.
 
 ## Fetched on first use, into the app's own folder
 

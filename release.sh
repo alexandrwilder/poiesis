@@ -40,12 +40,17 @@ security list-keychains -d user -s $keychains "$KC"
 security unlock-keychain -p "$(security find-generic-password -s poiesis-signing -w)" "$KC"
 export POIESIS_SIGN_IDENTITY="Poiesis (self-signed)"
 
+echo "== the tests, with the race detector: nothing is released that fails them"
+go vet ./... || { echo "go vet fails: no release"; exit 1; }
+go test -race -count=1 ./... > "$out/test.log" 2>&1 || { tail -40 "$out/test.log"; echo "the tests fail: no release"; exit 1; }
+
 echo "== the Mac host"
 hosts/mac/build.sh >/dev/null
 echo "== the Mac app and its install file"
 go build -ldflags "$stamp" -o "$out/poiesis" .
 cp -R assets "$out/assets" # the app's icon is found beside the program
-"$out/poiesis" dmg "$out/Poiesis.dmg" >/dev/null
+"$out/poiesis" dmg "$out/Poiesis.dmg" > "$out/dmg.log"
+grep -E "no licence text|✗" "$out/dmg.log" || true # a package without its licence is named here
 echo "== the command for Linux"
 for arch in amd64 arm64; do
   mkdir -p "$out/linux-$arch"

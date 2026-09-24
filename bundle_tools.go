@@ -36,9 +36,8 @@ func bundleTools(app string, say func(string, ...any)) error {
 	var queue []string
 	for _, name := range bundledToolNames {
 		src := systemTool(name)
-		if !strings.Contains(src, "/") {
-			say("  ✗ %s is not installed here, so it cannot go into the app", name)
-			continue
+		if !strings.Contains(src, "/") { // an app without one of its tools must never be made
+			return fmt.Errorf("%s is not installed here, so it cannot go into the app", name)
 		}
 		src, _ = filepath.EvalSymlinks(src)
 		dst := filepath.Join(tools, name)
@@ -139,7 +138,52 @@ func bundleTools(app string, say func(string, ...any)) error {
 			return fmt.Errorf("signing %s: %s", filepath.Base(dst), strings.TrimSpace(string(out)))
 		}
 	}
+	if err := bundleLicences(app, copied, say); err != nil {
+		return fmt.Errorf("the licence texts: %w", err)
+	}
 	say("  ✓ tools inside the app: %d programs, %d libraries", len(bundledToolNames), len(copied)-len(bundledToolNames))
+	return nil
+}
+
+// bundleLicences puts the licence texts of every program and library inside the app into
+// Contents/Resources/licenses, one folder per package named with its version (ffmpeg-9.0.2):
+// whoever gets the app gets the licences with it.
+func bundleLicences(app string, copied map[string]string, say func(string, ...any)) error {
+	kegs := map[string]bool{} // a package's own folder: <prefix>/Cellar/<name>/<version>
+	for src := range copied {
+		i := strings.Index(src, "/Cellar/")
+		if i < 0 {
+			continue
+		}
+		if p := strings.SplitN(src[i+len("/Cellar/"):], "/", 3); len(p) >= 2 {
+			kegs[src[:i]+"/Cellar/"+p[0]+"/"+p[1]] = true
+		}
+	}
+	dir := filepath.Join(app, "Contents", "Resources", "licenses")
+	for keg := range kegs {
+		name := filepath.Base(filepath.Dir(keg)) + "-" + filepath.Base(keg)
+		files, _ := filepath.Glob(filepath.Join(keg, "*"))
+		found := 0
+		for _, f := range files {
+			up := strings.ToUpper(filepath.Base(f))
+			if !strings.HasPrefix(up, "LICENSE") && !strings.HasPrefix(up, "LICENCE") && !strings.HasPrefix(up, "COPYING") && !strings.HasPrefix(up, "NOTICE") {
+				continue
+			}
+			if fi, err := os.Stat(f); err != nil || fi.IsDir() {
+				continue
+			}
+			if err := os.MkdirAll(filepath.Join(dir, name), 0o755); err != nil {
+				return err
+			}
+			if err := copyInto(f, filepath.Join(dir, name, filepath.Base(f)), 0o644); err != nil {
+				return err
+			}
+			found++
+		}
+		if found == 0 {
+			say("  · no licence text found for %s: add it by hand before a release", name)
+		}
+	}
 	return nil
 }
 

@@ -29,8 +29,8 @@ Notes wait for you to remember them. A living log remembers for you: what you sa
 back when the same people, places and plans come up again.
 
 > **"The whole family loved the stew."**<br>
-> Three years later you have no idea what to cook. You ask, and the stew comes back, playing
-> from that second.
+> Three years later you have no idea what to cook. You ask, and the stew comes back, with the
+> second you said it.
 
 > **"Legs heavy. Slept five hours."**<br>
 > Six weeks into a marathon plan, every morning you said something like it lies side by
@@ -56,14 +56,14 @@ back when the same people, places and plans come up again.
   <img src="docs/images/entry.png" width="880" alt="An entry: the words with their times, what each line was (an event, an intention, a belief, a decision), and below it what was said earlier about the same people.">
 </p>
 
-Search everything you have ever said, across days:
+Search every day at once:
 
 <p align="center">
   <img src="docs/images/search.png" width="880" alt="A search for oven finds the moment in two entries on two days.">
 </p>
 
 Then ask the AI you already use, Claude, Cursor or any app that speaks MCP: *what did I say
-about the bakery in August?* It answers from your log and plays the moment.
+about the bakery in August?* It answers from your log, with the moment you said it.
 
 Or tell it you want to talk: *I need to think out loud about the launch.* Poiesis opens,
 ready, with *the launch* as the line to talk about. You press space.
@@ -87,10 +87,10 @@ write a Poiesis log, your own AI connection included.
 
 ## The promise
 
+You only talk freely where you know no one else is listening. So:
+
 - **It runs on your computer:** the recording, the words, the sorting.
 - **Video and sound never leave it.**
-- **Your choice:** add your own Claude key for a stronger model. Then an entry's words go to
-  Anthropic, never the video.
 - **Any AI you connect can read your log. None can change it.**
 - **An AI can open Poiesis ready when you ask. Only you press record.**
 - **Your folder follows your own backup and sync,** for example iCloud.

@@ -84,7 +84,7 @@ func askContext(d *tuiData, question string) string {
 	}
 	var b strings.Builder
 	for _, c := range picked {
-		fmt.Fprintf(&b, "%s · %s · %s [%s @%.1f]\n", c.StatedAt[:10], c.Kind, c.Text, c.Source.Episode, c.Source.Start)
+		fmt.Fprintf(&b, "%s · %s · %s [%s @%.1f]\n", leading(c.StatedAt, 10), c.Kind, c.Text, c.Source.Episode, c.Source.Start)
 	}
 	return b.String()
 }

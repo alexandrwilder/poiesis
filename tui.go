@@ -60,14 +60,15 @@ type tuiModel struct {
 	update     string // a newer version the daily look found; "" when there is none
 	focused    bool   // the window is in front; when it is not, the camera rests
 
-	entries  listState
-	entry    entryState
-	entities listState
-	entity   entityState
-	log      logState
-	record   recordState
-	settings settingsState
-	ask      askState
+	entries     listState
+	entry       entryState
+	reopenAfter string // an installed update's app, started again once the entry underway is done
+	entities    listState
+	entity      entityState
+	log         logState
+	record      recordState
+	settings    settingsState
+	ask         askState
 }
 
 type listState struct {
@@ -95,8 +96,13 @@ func (m *tuiModel) Init() tea.Cmd {
 		m.enterLog()
 		return tea.Batch(watchCommandCmd(), m.startUpdateChecks())
 	}
+	waiting := m.processWaiting() // first, so the picture waits while they are processed
+	// opened by a link: the camera waits for the person's first key (FORMAT.md, Links)
+	if _, err := parseLink(peekCommand(commandFile(), time.Now())); err == nil {
+		return tea.Batch(m.enterRecordResting(), watchCommandCmd(), m.startUpdateChecks(), waiting)
+	}
 	// the record screen is the front door: open it, ready, camera faint
-	return tea.Batch(m.enterRecord(), watchCommandCmd(), m.startUpdateChecks())
+	return tea.Batch(m.enterRecord(), watchCommandCmd(), m.startUpdateChecks(), waiting)
 }
 
 // writeWindowPID lets the menu bar item find this window instead of opening another.
@@ -114,6 +120,20 @@ func clearWindowPID() {
 // externalCmdMsg is a link (link.go) that the menu bar item, the system or an AI left for this
 // window.
 type externalCmdMsg string
+
+// peekCommand reads what waits in the command file without taking it: a link no more than a
+// minute old, or nothing.
+func peekCommand(path string, now time.Time) string {
+	fi, err := os.Stat(path)
+	if err != nil || now.Sub(fi.ModTime()) > time.Minute {
+		return ""
+	}
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(b))
+}
 
 // takeCommand reads and removes what was left in the command file. A link left more than a
 // minute ago is stale (no window was there to take it) and is dropped, not followed.
@@ -143,8 +163,8 @@ func (m *tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.FocusMsg:
 		m.focused = true
-		if m.scr == screenRecord && m.record.phase == "ready" && m.reflectionOn() {
-			m.startPreview() // back in front: the camera comes back
+		if m.scr == screenRecord && m.record.phase == "ready" && m.reflectionOn() && !m.record.resting {
+			m.startPreview() // back in front: the camera comes back, unless it waits for a key
 		}
 		return m, nil
 	case tea.BlurMsg:
@@ -163,6 +183,9 @@ func (m *tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		m.data = msg.data
+		if msg.entities != nil {
+			m.v.Entities = msg.entities
+		}
 		m.cacheStreak()
 		if msg.openEntry != "" {
 			for i, e := range m.data.entries {
@@ -175,12 +198,26 @@ func (m *tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	case tickMsg:
+		if m.reopenAfter != "" && !m.entryUnderway() { // an installed update waited for this entry
+			reopenApp(m.reopenAfter)
+			return m, tea.Quit
+		}
 		// nothing for three minutes while ready: the camera rests until a key
 		if m.scr == screenRecord && m.record.phase == "ready" && m.record.cap != nil && !m.record.resting &&
 			!m.record.lastKey.IsZero() && time.Since(m.record.lastKey) > 3*time.Minute {
 			m.stopCap()
 			m.record.resting = true
 			m.status = "camera resting · any key wakes it"
+		}
+		// a recording whose camera stops on its own keeps what it has: the entry pauses, and says so
+		if c := m.record.cap; c != nil && m.record.phase == "recording" {
+			select {
+			case err := <-c.ended():
+				m.pauseEntry()
+				m.record.lastErr = "the recording stopped: " + cameraProblem(err) + " · what was recorded is kept · space tries again, enter completes"
+				m.status = ""
+			default:
+			}
 		}
 		// a camera that stops on its own (blocked, unplugged) must say so, not go black
 		if c := m.record.cap; c != nil && m.record.phase == "ready" {
@@ -204,10 +241,19 @@ func (m *tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	case ingestDoneMsg:
-		m.record.processing = false
-		m.record.completed = ""
-		if m.scr == screenRecord && m.record.phase == "ready" && m.focused {
-			m.startPreview() // the entry is done: the picture comes back
+		if m.record.pending > 0 {
+			m.record.pending--
+		}
+		m.record.processing = m.record.pending > 0
+		if m.reopenAfter != "" && !m.entryUnderway() { // an installed update waited for this entry
+			reopenApp(m.reopenAfter)
+			return m, tea.Quit
+		}
+		if !m.record.processing {
+			m.record.completed = ""
+			if m.scr == screenRecord && m.record.phase == "ready" && m.focused && !m.record.resting {
+				m.startPreview() // every entry is done: the picture comes back
+			}
 		}
 		if msg.err != nil {
 			if errors.Is(msg.err, ErrNoSpeech) {

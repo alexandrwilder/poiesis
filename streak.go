@@ -15,6 +15,14 @@ type streak struct {
 	Alive bool // false when the run ended before yesterday
 }
 
+// calendarDays counts the days from a's date to b's date, each in its own time zone. It
+// counts by the calendar, so a clock change (a 23- or 25-hour day) never adds or loses one.
+func calendarDays(a, b time.Time) int {
+	ya, ma, da := a.Date()
+	yb, mb, db := b.Date()
+	return int(time.Date(yb, mb, db, 0, 0, 0, 0, time.UTC).Sub(time.Date(ya, ma, da, 0, 0, 0, 0, time.UTC)).Hours() / 24)
+}
+
 // daysLogged takes entry times (RFC3339) and "today" and returns the streak.
 func daysLogged(recordedAt []string, today time.Time) streak {
 	seen := map[string]bool{}
@@ -37,15 +45,14 @@ func daysLogged(recordedAt []string, today time.Time) streak {
 	sort.Slice(days, func(i, j int) bool { return days[i].Before(days[j]) })
 	run := 1
 	for i := len(days) - 1; i > 0; i-- {
-		if days[i].Sub(days[i-1]) == 24*time.Hour {
+		if calendarDays(days[i-1], days[i]) == 1 {
 			run++
 		} else {
 			break
 		}
 	}
 	last := days[len(days)-1]
-	t0 := time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, today.Location())
-	alive := !last.Before(t0.Add(-24 * time.Hour))
+	alive := calendarDays(last, today) <= 1
 	if !alive {
 		run = 0
 	}

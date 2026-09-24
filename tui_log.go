@@ -121,12 +121,7 @@ func dayHeading(e *Episode) string {
 	return h
 }
 
-func daysAgo(t time.Time) int {
-	now := time.Now()
-	a := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	b := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, now.Location())
-	return int(a.Sub(b).Hours() / 24)
-}
+func daysAgo(t time.Time) int { return calendarDays(t, time.Now()) }
 
 // activityStrip: the last thirty days as marks, entries in amber.
 func (m *tuiModel) activityStrip() string {
@@ -370,6 +365,15 @@ func (m *tuiModel) viewLog() string {
 		b.WriteString(cut(line, inner) + "\n")
 	}
 	return b.String()
+}
+
+// leading is the first n bytes of s, or all of s when it is shorter: a date in a file that a
+// person or a sync cut short never crashes a page.
+func leading(s string, n int) string {
+	if len(s) < n {
+		return s
+	}
+	return s[:n]
 }
 
 // clockOf: "16:13"

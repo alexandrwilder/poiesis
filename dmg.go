@@ -25,8 +25,9 @@ const dmgReadMe = `Poiesis %s, a preview for a few people
 
 Your entries stay on this Mac, as plain files in Documents > Poiesis Vault.
 The first entry fetches the speech model once (about 0.6 GB) and the local
-AI's model once (about 3.4 GB). Nothing else is downloaded, and nothing is
-sent anywhere.
+AI's model once (about 3.4 GB). While Poiesis is open it asks GitHub every
+hour for the newest version number; settings can turn that off. Your
+recordings and words never leave this Mac, unless you add your own Claude key.
 
 Needs a Mac with Apple silicon (M1 or later) and macOS 14 or later.
 `

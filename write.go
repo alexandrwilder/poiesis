@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -47,8 +48,18 @@ type Episode struct {
 var ErrNoSpeech = errors.New("nothing was said in this clip, so no entry was made (the video is kept)")
 
 // Ingest runs the whole pipeline for one recording.
+// ingestMu lets this program process one entry at a time: two entries recorded close together
+// never take the same id or rewrite the same pages at once.
+var ingestMu sync.Mutex
+
 func Ingest(ctx context.Context, v *Vault, opts IngestOptions) (*Episode, error) {
+	ingestMu.Lock()
+	defer ingestMu.Unlock()
 	defer setProgress("", 0, 0, 0)
+	// what the entries before this one added, read now that it is this one's turn
+	if err := v.loadEntities(); err != nil {
+		return nil, err
+	}
 	// 1. register: hash, sidecar, move into raw/
 	m, err := Register(v, opts.File, opts.KeepInbox)
 	if err != nil {
@@ -371,7 +382,7 @@ func writeEpisode(v *Vault, ep *Episode, lines []Line, claims []Claim) error {
 	var b strings.Builder
 	b.WriteString(fm)
 	fmt.Fprintf(&b, "\n# %s · day %d\n\n", ep.ID, ep.Day)
-	fmt.Fprintf(&b, "%s · %s · %s", ep.RecordedAt[:16], mmss(ep.DurationS), ep.Transcriber)
+	fmt.Fprintf(&b, "%s · %s · %s", leading(ep.RecordedAt, 16), mmss(ep.DurationS), ep.Transcriber)
 	if ep.Mission != "" {
 		fmt.Fprintf(&b, " · mission [[%s]]", ep.Mission)
 	}
@@ -498,13 +509,13 @@ func rebuildEntityPages(v *Vault) error {
 		missionEps := byMission[id]
 		e.Mentions = len(cs)
 		if len(cs) > 0 {
-			e.FirstSeen = cs[len(cs)-1].StatedAt[:10]
-			e.LastSeen = cs[0].StatedAt[:10]
+			e.FirstSeen = leading(cs[len(cs)-1].StatedAt, 10)
+			e.LastSeen = leading(cs[0].StatedAt, 10)
 		}
 		if e.Kind == "mission" && len(missionEps) > 0 {
 			e.Mentions = len(missionEps)
-			e.FirstSeen = missionEps[len(missionEps)-1].RecordedAt[:10]
-			e.LastSeen = missionEps[0].RecordedAt[:10]
+			e.FirstSeen = leading(missionEps[len(missionEps)-1].RecordedAt, 10)
+			e.LastSeen = leading(missionEps[0].RecordedAt, 10)
 		}
 		if len(e.Aliases) == 0 {
 			e.Aliases = []string{humanize(id)}
@@ -530,7 +541,7 @@ func rebuildEntityPages(v *Vault) error {
 				b.WriteString("_no entries yet_\n")
 			}
 			for _, ep := range missionEps {
-				fmt.Fprintf(&b, "- [[%s]] · day %d · %s · %s · %d claims\n", ep.ID, ep.Day, strings.Replace(ep.RecordedAt[:16], "T", " ", 1), mmss(ep.DurationS), ep.ClaimCount)
+				fmt.Fprintf(&b, "- [[%s]] · day %d · %s · %s · %d claims\n", ep.ID, ep.Day, strings.Replace(leading(ep.RecordedAt, 16), "T", " ", 1), mmss(ep.DurationS), ep.ClaimCount)
 			}
 		}
 		b.WriteString("\n## Timeline\n\n")
@@ -543,7 +554,7 @@ func rebuildEntityPages(v *Vault) error {
 				super = " ~~superseded~~"
 			}
 			fmt.Fprintf(&b, "- %s · **%s** · %s — \"%s\" · [[%s]] [%s](poiesis://%s?t=%.1f)%s\n",
-				c.StatedAt[:10], c.Kind, c.Text, c.Quote, c.Source.Episode, mmss(c.Source.Start), c.Source.Episode, c.Source.Start, super)
+				leading(c.StatedAt, 10), c.Kind, c.Text, c.Quote, c.Source.Episode, mmss(c.Source.Start), c.Source.Episode, c.Source.Start, super)
 		}
 		// related: entities that share claims with this one
 		related := map[string]int{}
@@ -599,7 +610,7 @@ func writeIndex(v *Vault) error {
 		if e.Mission != "" {
 			mission = "[[" + e.Mission + "]]"
 		}
-		fmt.Fprintf(&b, "- [[%s]] · day %d · %s · %s · %d claims · %s\n", e.ID, e.Day, strings.Replace(e.RecordedAt[:16], "T", " ", 1), mmss(e.DurationS), e.ClaimCount, mission)
+		fmt.Fprintf(&b, "- [[%s]] · day %d · %s · %s · %d claims · %s\n", e.ID, e.Day, strings.Replace(leading(e.RecordedAt, 16), "T", " ", 1), mmss(e.DurationS), e.ClaimCount, mission)
 	}
 	b.WriteString("\n## Entities by mentions\n\n")
 	ents := make([]*Entity, 0, len(v.Entities))
@@ -619,7 +630,7 @@ func writeIndex(v *Vault) error {
 	open := 0
 	for _, c := range all {
 		if (c.Kind == "question" || c.Kind == "intention" || c.Kind == "prediction") && c.ValidTo == nil && c.Outcome == nil {
-			fmt.Fprintf(&b, "- %s · **%s** · %s · [[%s]]\n", c.StatedAt[:10], c.Kind, c.Text, c.Source.Episode)
+			fmt.Fprintf(&b, "- %s · **%s** · %s · [[%s]]\n", leading(c.StatedAt, 10), c.Kind, c.Text, c.Source.Episode)
 			open++
 			if open == 30 {
 				break

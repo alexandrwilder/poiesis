@@ -138,7 +138,10 @@ func (m *tuiModel) updateEntry(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	case "e":
-		if ci := st.claimAt[st.cursor.cursor]; !st.earlier && ci >= 0 && len(st.claims[ci].About) > 0 {
+		if st.earlier || st.cursor.cursor >= len(st.claimAt) {
+			return m, nil // no line to follow: the words could not be read
+		}
+		if ci := st.claimAt[st.cursor.cursor]; ci >= 0 && len(st.claims[ci].About) > 0 {
 			m.openEntity(st.claims[ci].About[0])
 		}
 		return m, nil
@@ -170,7 +173,7 @@ func (m *tuiModel) viewEntry() string {
 		mission = humanize(st.ep.Mission)
 	}
 	b.WriteString(sHead.Render(fmt.Sprintf("DAY %04d", st.ep.Day)) + sDim.Render("  ──  ") +
-		sMid.Render(strings.Replace(st.ep.RecordedAt[:16], "T", " ", 1)) + sDim.Render("  ──  ") +
+		sMid.Render(strings.Replace(leading(st.ep.RecordedAt, 16), "T", " ", 1)) + sDim.Render("  ──  ") +
 		sMid.Render(mmss(st.ep.DurationS)) + sDim.Render("  ──  ") + sMid.Render(mission) + "\n\n")
 	if st.loadErr != "" {
 		b.WriteString(sAmber.Render(st.loadErr) + "\n")

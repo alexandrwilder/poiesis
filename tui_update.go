@@ -65,6 +65,11 @@ func (m *tuiModel) startUpdateChecks() tea.Cmd {
 	return tick
 }
 
+// entryUnderway: an entry is being recorded, paused or processed.
+func (m *tuiModel) entryUnderway() bool {
+	return m.record.processing || m.record.phase == "recording" || m.record.phase == "paused"
+}
+
 // installUpdate is enter on the updates row: look now, or install what was found.
 func (m *tuiModel) installUpdate() tea.Cmd {
 	if m.record.processing || m.record.phase == "recording" || m.record.phase == "paused" {
@@ -121,6 +126,9 @@ func (m *tuiModel) updateMsg(msg tea.Msg) (cmd tea.Cmd, ok bool) {
 		switch {
 		case msg.err != nil:
 			m.status = "the update did not happen: " + msg.err.Error()
+		case msg.reopen != "" && m.entryUnderway():
+			m.reopenAfter = msg.reopen // an entry is never cut short by an update
+			m.status = "Poiesis " + msg.version + " is installed · it starts again when this entry is done"
 		case msg.reopen != "":
 			m.status = "Poiesis " + msg.version + " is installed · starting it again"
 			reopenApp(msg.reopen)
@@ -138,7 +146,8 @@ func (m *tuiModel) updateMsg(msg tea.Msg) (cmd tea.Cmd, ok bool) {
 }
 
 // reopenApp opens the app again a moment after this one has quit, from a process of its own.
-func reopenApp(app string) {
+// reopenApp starts the app again after an update; a test puts a fake in its place.
+var reopenApp = func(app string) {
 	c := exec.Command("/bin/sh", "-c", `sleep 1; open "$0"`, app)
 	detach(c)
 	_ = c.Start()

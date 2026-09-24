@@ -1,12 +1,14 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"gopkg.in/yaml.v3"
 )
 
@@ -47,13 +49,27 @@ func TestLinks(t *testing.T) {
 	}
 }
 
-// A record link opens the record screen, ready, with the line to talk about; the person
-// starts the recording. An entry being recorded is never relabelled by a link.
+// countCameraOpens stands in for the camera opener in a test and counts how often it was asked.
+func countCameraOpens(t *testing.T) *int {
+	opened := 0
+	saved := cameraOpener
+	cameraOpener = func(*Vault, captureOptions) (camera, error) {
+		opened++
+		return nil, errors.New("no camera in a test")
+	}
+	t.Cleanup(func() { cameraOpener = saved })
+	return &opened
+}
+
+// A record link opens the record screen, ready, with the line to talk about and the camera
+// off: the person's first key turns it on, and only the person starts the recording. An entry
+// being recorded is never relabelled by a link.
 func TestARecordLinkOpensTheRecordScreenReady(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	m := &tuiModel{v: &Vault{Config: defaultConfig()}, data: &tuiData{}}
-	m.log.search = newInput("")   // the log screen, where leaving goes
-	m.v.Config.Reflection = "off" // no camera in a test
+	opened := countCameraOpens(t)
+	m := &tuiModel{v: &Vault{Config: defaultConfig()}, data: &tuiData{}, focused: true}
+	m.log.search = newInput("") // the log screen, where leaving goes
+	m.v.Config.Reflection = "on"
 	m.scr = screenLog
 	m.follow("poiesis://record?about=the%20launch")
 	if m.scr != screenRecord || m.record.about != "the launch" {
@@ -61,6 +77,14 @@ func TestARecordLinkOpensTheRecordScreenReady(t *testing.T) {
 	}
 	if m.record.phase != "ready" {
 		t.Fatalf("a link started the recording itself: phase %q", m.record.phase)
+	}
+	m.Update(tea.FocusMsg{}) // the window comes to the front
+	if *opened != 0 || !m.record.resting {
+		t.Fatalf("a link turned the camera on: asked %d times, resting %v", *opened, m.record.resting)
+	}
+	m.updateRecord(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("a")}) // the person's first key
+	if *opened != 1 || m.record.resting || m.record.phase != "ready" {
+		t.Fatalf("the first key: asked %d times, resting %v, phase %q", *opened, m.record.resting, m.record.phase)
 	}
 	m.record.phase = "recording"
 	m.follow("poiesis://record?about=something%20else")
@@ -71,6 +95,27 @@ func TestARecordLinkOpensTheRecordScreenReady(t *testing.T) {
 	m.leaveRecord()
 	if m.record.about != "" {
 		t.Fatalf("the line to talk about outlived the record screen: %q", m.record.about)
+	}
+}
+
+// A window that a link started opens with the camera off too.
+func TestAWindowOpenedByALinkStartsWithTheCameraOff(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	opened := countCameraOpens(t)
+	if err := os.MkdirAll(appStateDir(), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(commandFile(), []byte("poiesis://record?about=x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	m := &tuiModel{v: &Vault{Root: t.TempDir(), Config: defaultConfig()}, data: &tuiData{}, focused: true}
+	m.v.Config.Reflection = "on"
+	m.Init()
+	if m.scr != screenRecord || !m.record.resting || *opened != 0 {
+		t.Fatalf("screen %v, resting %v, camera asked %d times", m.scr, m.record.resting, *opened)
+	}
+	if _, err := os.Stat(commandFile()); err != nil {
+		t.Fatalf("the window took the link before following it: %v", err)
 	}
 }
 

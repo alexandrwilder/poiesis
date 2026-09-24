@@ -15,6 +15,6 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
-      - run: go vet ./... && go test ./...
+      - run: go vet ./... && go test -race ./... # the race detector guards the one-at-a-time rules
       # the core must keep building for Windows too; the Mac build needs cgo and is checked on a Mac
       - run: GOOS=windows GOARCH=amd64 go vet ./... && GOOS=windows GOARCH=arm64 go build -o /dev/null .

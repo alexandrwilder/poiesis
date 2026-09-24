@@ -43,6 +43,21 @@ final class HostApp: NSObject, NSApplicationDelegate, LocalProcessTerminalViewDe
         NSApp.activate()
     }
 
+    /// A recording being written is closed properly before the window goes: an mp4 without its
+    /// ending cannot be played, and a closed part becomes an entry the next time Poiesis opens.
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard camera.isRecording() else { return .terminateNow }
+        var replied = false
+        let reply = {
+            guard !replied else { return }
+            replied = true
+            NSApp.reply(toApplicationShouldTerminate: true)
+        }
+        camera.stopRecording { DispatchQueue.main.async(execute: reply) }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5, execute: reply) // a quit never hangs
+        return .terminateLater
+    }
+
     func applicationWillTerminate(_ note: Notification) {
         camera.stopRecording()
         link?.stop()

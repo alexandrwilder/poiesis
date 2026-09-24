@@ -416,8 +416,8 @@ func writeMacApp(app, vaultRoot string) (string, error) {
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>NSHighResolutionCapable</key><true/>
 ` + extra + `  <key>NSDocumentsFolderUsageDescription</key><string>Poiesis keeps your entries in a folder in Documents. It reads and writes only that folder.</string>
-  <key>NSCameraUsageDescription</key><string>Poiesis records you when you press space. Nothing leaves this computer.</string>
-  <key>NSMicrophoneUsageDescription</key><string>Poiesis records your voice when you press space. Nothing leaves this computer.</string>
+  <key>NSCameraUsageDescription</key><string>Poiesis records you when you press space. The video never leaves this computer.</string>
+  <key>NSMicrophoneUsageDescription</key><string>Poiesis records your voice when you press space. The recording never leaves this computer.</string>
 </dict></plist>
 `
 		if err := os.WriteFile(filepath.Join(b.root, "Contents", "Info.plist"), []byte(plist), 0o644); err != nil {

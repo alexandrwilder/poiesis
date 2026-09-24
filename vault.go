@@ -341,11 +341,7 @@ func (v *Vault) Day(recorded time.Time) (int, error) {
 			first = t
 		}
 	}
-	y1, m1, d1 := first.Date()
-	y2, m2, d2 := recorded.Date()
-	a := time.Date(y1, m1, d1, 0, 0, 0, 0, recorded.Location())
-	b := time.Date(y2, m2, d2, 0, 0, 0, 0, recorded.Location())
-	return int(b.Sub(a).Hours()/24) + 1, nil
+	return calendarDays(first, recorded) + 1, nil
 }
 
 func (v *Vault) AppendLog(line string) error {
@@ -392,6 +388,37 @@ func findTool(name string) string {
 
 // Orphans lists recordings in raw/ that have no entry page: what a crash or a closed
 // laptop leaves behind. Nothing is ever lost; it is processed later.
+//
+// waitingRecordings is everything an earlier session left to process: the parts of an
+// interrupted entry (joined first), clips in the inbox, and recordings in raw/ without an
+// entry. inRaw marks those already in raw/.
+type waitingRecording struct {
+	file  string
+	inRaw bool
+}
+
+func (v *Vault) waitingRecordings() ([]waitingRecording, error) {
+	if _, err := recoverParts(v); err != nil {
+		return nil, fmt.Errorf("the parts of an unfinished entry: %w", err)
+	}
+	var out []waitingRecording
+	inbox, err := v.InboxFiles()
+	if err != nil {
+		return nil, err
+	}
+	for _, f := range inbox {
+		out = append(out, waitingRecording{file: f})
+	}
+	orphans, err := v.Orphans()
+	if err != nil {
+		return nil, err
+	}
+	for _, f := range orphans {
+		out = append(out, waitingRecording{file: f, inRaw: true})
+	}
+	return out, nil
+}
+
 func (v *Vault) Orphans() ([]string, error) {
 	clips, err := filepath.Glob(v.Path("raw", "*", "*", "*.mp4"))
 	if err != nil {

@@ -86,14 +86,22 @@ final class Camera: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, AVCa
         }
     }
 
-    func stopRecording() {
+    /// Whether a recording is being written; asked from the main thread.
+    func isRecording() -> Bool { queue.sync { recording } }
+
+    /// Stops the recording; `done` runs once the file is closed (or at once, with none).
+    func stopRecording(then done: (() -> Void)? = nil) {
         queue.async {
-            guard self.recording else { return }
+            guard self.recording else {
+                done?()
+                return
+            }
             self.recording = false
             let path = self.file?.path ?? ""
             guard let w = self.writer else {
                 self.send(["t": "recording", "state": "stopped", "file": path, "seconds": 0])
                 self.apply()
+                done?()
                 return
             }
             let seconds = CMTimeGetSeconds(CMTimeSubtract(self.lastTime, self.firstTime))
@@ -108,6 +116,7 @@ final class Camera: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, AVCa
                     self.send(["t": "error", "what": "record", "text": w.error?.localizedDescription ?? "the recording could not be finished"])
                 }
                 self.send(["t": "recording", "state": "stopped", "file": path, "seconds": seconds.isFinite ? seconds : 0])
+                done?()
             }
             self.apply()
         }

@@ -113,6 +113,10 @@ func (m *tuiModel) updateSettings(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if key.String() == "left" {
 			dir = -1
 		}
+		if theHost != nil && (st.cursor == rowCamera || st.cursor == rowMic) {
+			m.status = "the window uses the Mac's default camera and microphone · change them in System Settings"
+			return m, nil
+		}
 		switch st.cursor {
 		case rowCamera:
 			cam, mic := splitDevice(c.CaptureDevice)
@@ -242,10 +246,7 @@ func setVaultPointer(root string) error {
 	if err := os.WriteFile(filepath.Join(appStateDir(), "vault.txt"), []byte(root+"\n"), 0o644); err != nil {
 		return err
 	}
-	if self, err := os.Executable(); err == nil && inMacApp() {
-		_ = os.WriteFile(filepath.Join(filepath.Dir(filepath.Dir(self)), "Resources", "vault.txt"), []byte(root+"\n"), 0o644)
-	}
-	return nil
+	return nil // never inside the app: a changed file breaks its signature, and macOS forgets its permissions
 }
 
 func (m *tuiModel) viewSettings() string {
@@ -273,15 +274,19 @@ func (m *tuiModel) viewSettings() string {
 	}
 	t := themeByName(c.Theme)
 	video := videoMode(c)
-	videoNote := "clear: sharp, 18 a second · light: softer, 10 a second, half the cost · styled: drawn in cells, cheapest"
+	videoNote := "clear: sharp, 12 a second · light: softer, 10 a second, cheaper · styled: drawn in cells, cheapest"
 	if video == "clear" && !terminalDrawsImages() {
 		videoNote = "this terminal cannot draw pixels: the styled picture is used"
+	}
+	cameraRow, micRow, cameraNote := deviceName(st.video, cam), deviceName(st.audio, mic), ""
+	if theHost != nil { // the window records with the Mac's own default devices
+		cameraRow, micRow, cameraNote = "the Mac's default", "the Mac's default", "change them in System Settings"
 	}
 	rows := []struct{ label, value, note string }{
 		{"theme", t.Name, t.Note},
 		{"video", video, videoNote},
-		{"camera", deviceName(st.video, cam), ""},
-		{"microphone", deviceName(st.audio, mic), ""},
+		{"camera", cameraRow, cameraNote},
+		{"microphone", micRow, cameraNote},
 		{"extraction", extract, "local: the words never leave · key: the words go to Anthropic, under your account"},
 		{"language", c.Language, "auto · sv · en"},
 		{"entry limit", mmss(float64(limit)), "an entry completes itself here"},

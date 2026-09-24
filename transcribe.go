@@ -47,6 +47,19 @@ type whisperJSON struct {
 // auto/en -> large-v3-turbo with the setting; sv -> KB-Whisper forced Swedish. On auto, a
 // recording that is clearly Swedish throughout is read as sv (language.go).
 // The names hint is the vault's entity vocabulary. Output is cached next to the raw file.
+// modelsToFetch is what the first entry that needs a speech model fetches: the general model
+// or, when the log is set to Swedish, the Swedish one, each with the voice detector. Nil for a
+// model Poiesis does not know how to fetch.
+func modelsToFetch(name string) []modelFile {
+	switch name {
+	case speechModels[0].Name:
+		return speechModels
+	case swedishModel.Name:
+		return []modelFile{swedishModel, speechModels[1]}
+	}
+	return nil
+}
+
 func Transcribe(v *Vault, m *Media, wav string, names string) (*Transcript, error) {
 	lang := strings.ToLower(v.Config.Language)
 	if lang == "" {
@@ -77,10 +90,10 @@ func Transcribe(v *Vault, m *Media, wav string, names string) (*Transcript, erro
 		modelPath, vadPath = mp, vp
 		break
 	}
-	if modelPath == "" && modelFile == speechModels[0].Name {
-		// first use: fetch the general model and the voice detector into the app's folder
+	if need := modelsToFetch(modelFile); modelPath == "" && need != nil {
+		// first use: fetch the model this entry needs, and the voice detector, into the app's folder
 		dir := defaultModelsDir()
-		for _, mf := range speechModels {
+		for _, mf := range need {
 			setProgress("downloading", 0, 0, 0)
 			if err := ensureModel(dir, mf, func(string, ...any) {}); err != nil {
 				return nil, fmt.Errorf("the speech model could not be downloaded: %w", err)

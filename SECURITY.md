@@ -10,8 +10,8 @@ vulnerability**. Only the maintainer sees it. Please do not open a public issue 
 security problem.
 
 Say what you found, how to see it happen, and which version (`poiesis version`). You get an
-answer within a week; a fix for a real problem goes out as a new release, and every installed
-copy picks it up within the hour.
+answer within a week; a fix for a real problem goes out as a new release. Every installed copy
+sees it within the hour and installs it when the person says yes.
 
 ## What is in scope
 

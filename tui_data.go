@@ -23,6 +23,7 @@ type tuiData struct {
 
 type dataReloadedMsg struct {
 	data      *tuiData
+	entities  map[string]*Entity // the people and things as the reload read them
 	status    string
 	openEntry string
 }
@@ -184,19 +185,26 @@ func newInput(placeholder string) textinput.Model {
 
 // reloadCmd reloads the vault after an ingest and optionally opens the new entry.
 func reloadCmd(v *Vault, status, openEntry string) tea.Cmd {
+	root := v.Root
 	return func() tea.Msg {
-		d, err := loadTUIData(v)
+		// read into a vault of its own; the window swaps it in on its own goroutine, so two
+		// reloads, or a reload and an entry being processed, never write the same map
+		rv, err := OpenVault(root)
 		if err != nil {
 			return dataReloadedMsg{status: "reload failed: " + err.Error()}
 		}
-		return dataReloadedMsg{data: d, status: status, openEntry: openEntry}
+		d, err := loadTUIData(rv)
+		if err != nil {
+			return dataReloadedMsg{status: "reload failed: " + err.Error()}
+		}
+		return dataReloadedMsg{data: d, entities: rv.Entities, status: status, openEntry: openEntry}
 	}
 }
 
 func claimLine(c Claim, width int, withDate bool) string {
 	date := ""
 	if withDate {
-		date = sDim.Render(c.StatedAt[:10]) + "  "
+		date = sDim.Render(leading(c.StatedAt, 10)) + "  "
 	}
 	tag := sAmber.Render(fmt6(c.Kind))
 	return fit(date+tag+"  "+sInk.Render(c.Text)+sDim.Render("  · "+mmss(c.Source.Start)), width)

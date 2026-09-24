@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -58,7 +59,7 @@ func (v *Vault) mcpRecord(in recordIn) (string, error) {
 	if err := openLink(v.Root, recordLink(in.About)); err != nil {
 		return "", fmt.Errorf("could not open Poiesis: %w", err)
 	}
-	return "Poiesis is open on the record screen, ready. The person presses space to start and enter to finish; nothing is recorded before that.", nil
+	return "Poiesis is open on the record screen, ready, with the camera off. The person's first key turns it on, space starts the recording and enter finishes it; nothing is recorded before that.", nil
 }
 
 func runMCP(v *Vault) error {
@@ -127,7 +128,13 @@ func capText(s string, n int, hint string) string {
 	return s[:n] + fmt.Sprintf("\n\n[cut here: %d more characters. %s]", len(s)-n, hint)
 }
 
+// mcpMu lets the AI connection answer one call at a time: an AI app may ask several things at
+// once, and the vault's people and things are one map that search reloads while read walks it.
+var mcpMu sync.Mutex
+
 func (v *Vault) orient() string {
+	mcpMu.Lock()
+	defer mcpMu.Unlock()
 	b, err := os.ReadFile(v.Path("_index.md"))
 	if err != nil {
 		return "This vault has no entries yet. Pages appear after the first recording is ingested. Read `schema` for the layout."
@@ -137,6 +144,8 @@ func (v *Vault) orient() string {
 }
 
 func (v *Vault) mcpRead(id string) (string, error) {
+	mcpMu.Lock()
+	defer mcpMu.Unlock()
 	id = strings.TrimSpace(id)
 	var path string
 	switch strings.ToLower(strings.TrimPrefix(id, "_")) {
@@ -179,6 +188,8 @@ func fileExists(p string) bool {
 }
 
 func (v *Vault) mcpSearch(in searchIn) (string, error) {
+	mcpMu.Lock()
+	defer mcpMu.Unlock()
 	d, err := loadTUIData(v)
 	if err != nil {
 		return "", err
@@ -195,7 +206,7 @@ func (v *Vault) mcpSearch(in searchIn) (string, error) {
 		limit = mcpMaxHits
 	}
 	inRange := func(ep Episode) bool {
-		day := ep.RecordedAt[:10]
+		day := leading(ep.RecordedAt, 10)
 		if in.From != "" && day < in.From {
 			return false
 		}
@@ -268,7 +279,7 @@ func (v *Vault) mcpSearch(in searchIn) (string, error) {
 				break
 			}
 			fmt.Fprintf(&b, "- %s · %s · %s — \"%s\" · %s t=%.1f (poiesis://%s?t=%.1f) · about: %s\n",
-				c.StatedAt[:10], c.Kind, c.Text, c.Quote, c.Source.Episode, c.Source.Start, c.Source.Episode, c.Source.Start, strings.Join(c.About, ", "))
+				leading(c.StatedAt, 10), c.Kind, c.Text, c.Quote, c.Source.Episode, c.Source.Start, c.Source.Episode, c.Source.Start, strings.Join(c.About, ", "))
 			shown++
 		}
 	}
@@ -289,6 +300,8 @@ func (v *Vault) mcpSearch(in searchIn) (string, error) {
 }
 
 func (v *Vault) mcpMoment(in momentIn) (string, error) {
+	mcpMu.Lock()
+	defer mcpMu.Unlock()
 	d, err := loadTUIData(v)
 	if err != nil {
 		return "", err
@@ -308,7 +321,7 @@ func (v *Vault) mcpMoment(in momentIn) (string, error) {
 	lo, hi := in.T-w/2, in.T+w/2
 	var b strings.Builder
 	fmt.Fprintf(&b, "%s · day %d · recorded %s · %s long · around %s (t=%.1f)\nplay: poiesis://%s?t=%.1f · file: %s\n\nTranscript:\n",
-		ep.ID, ep.Day, strings.Replace(ep.RecordedAt[:16], "T", " ", 1), mmss(ep.DurationS), mmss(in.T), in.T, ep.ID, in.T, ep.Media)
+		ep.ID, ep.Day, strings.Replace(leading(ep.RecordedAt, 16), "T", " ", 1), mmss(ep.DurationS), mmss(in.T), in.T, ep.ID, in.T, ep.Media)
 	n := 0
 	for _, l := range lines {
 		if l.End < lo || l.Start > hi {

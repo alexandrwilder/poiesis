@@ -5,7 +5,8 @@
 - A Mac with Apple silicon (M1 or later) and macOS 14 or later.
 - About 4 GB for the models, fetched once: the speech model (0.6 GB) with your first entry,
   and the local AI's model (3.4 GB) the first time an entry is sorted.
-- About 25 MB for each three-minute entry, so about 9 GB a year if you record every day.
+- About 31 MB for each three-minute entry, the video and the sound the words are heard from, so
+  about 11 GB a year if you record every day.
 - Your yes, once, for the camera, the microphone and the Documents folder.
 
 ## The one line
@@ -14,8 +15,8 @@
 
 It downloads the newest release and checks every file against the release's checksums. It
 puts Poiesis in `~/Applications`, the `poiesis` command in `~/.local/bin` and the menu bar item
-at login, then opens Poiesis. Your log is made in `~/Documents/Poiesis Vault` the first time
-you record.
+at login, then opens Poiesis. Your log is made in `~/Documents/Poiesis Vault` when Poiesis
+first opens.
 
 ## The install file
 
@@ -48,7 +49,9 @@ own certificate, so macOS keeps the camera and microphone approved across update
   newest version number. Nothing about you is sent. Settings can turn it off.
 - **Only if you add your own Claude key:** each entry's words go to Anthropic under your
   account. Never the video.
-- **Only if you connect an AI app:** it reads the text it asks for.
+- **Only if you connect an AI app:** it reads the text it asks for. An AI that runs in the
+  cloud, such as Claude or ChatGPT, sends that text to its company, as it does with anything
+  you type to it. Never the video.
 - **Your log folder follows your own backup and sync,** for example iCloud if Documents is
   synced.
 

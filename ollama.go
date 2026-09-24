@@ -14,7 +14,7 @@ import (
 )
 
 // The local AI, part of the install: Poiesis carries the Ollama runtime inside the app and
-// starts it when an entry needs extracting. The model itself (2.5 GB) is fetched once, on
+// starts it when an entry needs extracting. The model itself (3.4 GB) is fetched once, on
 // first use, into the app's own folder, so an update of Poiesis never fetches it again.
 // If a person already runs their own Ollama, that one is used and nothing is started.
 

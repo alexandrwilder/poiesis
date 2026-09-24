@@ -31,7 +31,7 @@ types and fields it does not know. Fields are only ever added.
 
 The first message each way:
 
-    core → host   {"t":"hello","versions":[1],"app":"poiesis 0.0.5"}
+    core → host   {"t":"hello","versions":[1],"app":"poiesis 0.1.0"}
     host → core   {"t":"hello","version":1,"host":"poiesis-mac 0.1","can":["picture","look","record","level"]}
 
 `can` lists what the host does. The core uses nothing that is not in it. With no shared
@@ -94,4 +94,6 @@ meaning, and never starts a recording because of one.
 ## Focus and ending
 
 Focus comes through the terminal's own focus reporting, not the socket. When the core exits,
-the host closes its window. When the socket closes, the core goes on without the host.
+the host closes its window. When the socket closes, the core goes on without the host. A host
+that quits while recording closes the file first, so the part it holds can be joined into an
+entry the next time the core starts.
