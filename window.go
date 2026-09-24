@@ -80,20 +80,21 @@ func parentPID(pid int) int {
 	return n
 }
 
-// openOrFocus is what the menu bar item does: one window, brought forward if it is open.
-// `what` is "" to just show it, or "record" to put it on the record screen.
+// openOrFocus is what the menu bar item and every link do: one window, brought forward if it
+// is open. `what` is "" to just show it, or a Poiesis link (link.go), the word "record" included.
 func openOrFocus(root, what string) error {
 	if app := macHostApp(); app != "" {
 		return openHostApp(app, what)
 	}
+	if what != "" { // the window reads it, open now or about to be
+		_ = os.MkdirAll(appStateDir(), 0o755)
+		_ = os.WriteFile(commandFile(), []byte(what), 0o644)
+	}
 	if focusWindow() {
-		if what != "" {
-			_ = os.MkdirAll(appStateDir(), 0o755)
-			_ = os.WriteFile(commandFile(), []byte(what), 0o644)
-		}
 		return nil
 	}
-	return openWindow(root, what == "record")
+	l, _ := parseLink(what)
+	return openWindow(root, l.record)
 }
 
 // macHostApp is Poiesis.app when its main program is the Mac host (hosts/mac), else "".

@@ -84,6 +84,13 @@ About ten times a second while the microphone is open, for the meter. RMS in dBF
 
 `what` is `camera`, `microphone`, `record` or `picture`. The core shows `text` as it is.
 
+## Links
+
+A host that the system hands `poiesis://` links to writes each link, as it came, to the file
+`command` in the app's state folder, and brings its window forward. The core reads that file,
+follows what a link may do (`FORMAT.md`, Links) and removes it. The host never reads a link's
+meaning, and never starts a recording because of one.
+
 ## Focus and ending
 
 Focus comes through the terminal's own focus reporting, not the socket. When the core exits,

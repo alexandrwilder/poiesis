@@ -20,6 +20,8 @@ copy picks it up within the hour.
   release's, or to skip the checksum.
 - The local socket between the window and the core, and the AI connection (MCP), which must
   stay read-only.
+- Links (`poiesis://`): a link that starts a recording, changes the log, or does anything
+  but open the record screen ready or an entry at a moment.
 
 ## Supported versions
 

@@ -49,7 +49,8 @@ their times, then the claims:
     ---
 
 The id is the date plus a letter. `day` counts days since the first entry. `mission` is
-the mission's id, or empty for a free run.
+the mission's id, or empty for a free run. `prompt` is there only when the entry was opened
+with a line to talk about (see Links): what the person set out to talk about.
 
 ## A claim
 
@@ -116,9 +117,9 @@ In Python, `json.loads` per line and `yaml` for the page headers is all it takes
 
 ## Reading it from an AI
 
-`poiesis mcp` serves the vault to any AI app that speaks MCP, on your machine, read-only.
+`poiesis mcp` serves the vault to any AI app that speaks MCP, on your machine. It never writes.
 `poiesis setup --mcp` connects Claude Code in one step; `poiesis mcp --connect` prints the lines
-for Claude Desktop and Cursor. Four verbs:
+for Claude Desktop and Cursor. Five verbs:
 
 | verb | what it gives | when to use it |
 |---|---|---|
@@ -126,10 +127,26 @@ for Claude Desktop and Cursor. Four verbs:
 | `search` | claims and transcript lines that match words, with filters for dates, kind, person, mission | "what did I say about the oven in August" |
 | `read` | one page as it is: an entry, a person, the index, the schema, the log | when a hit needs its context |
 | `moment` | the words around one second of one entry, and the link that plays it | "play the moment I said that" |
+| `record` | opens Poiesis on the record screen, ready, with a line to talk about. The person presses space | "I want to log how the launch went" |
 
 Answers are capped so the AI never drowns: 16,000 characters, 50 hits. A good first
 question: "Orient yourself in my log, then tell me what I said about X and play the
 moment."
+
+## Links
+
+Two links open Poiesis from anywhere: a note, a shortcut, a calendar event, an AI.
+
+    poiesis://record?about=how%20the%20launch%20went   open ready to record, with a line to talk about
+    poiesis://2026-09-02-a?t=63.2                      open an entry at that second
+
+On a Mac with the app they work wherever links work. Everywhere, `poiesis open <link>` does
+the same. `about` is one line of at most 120 letters: shown on the record screen and saved as
+the entry's `prompt`. Anything else is refused.
+
+A link never starts a recording. Opening the record screen is as far as any link, script or
+AI goes: the person presses space. A link that arrives while an entry is being recorded is
+not followed.
 
 ## Changing the format
 

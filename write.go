@@ -18,6 +18,7 @@ import (
 type IngestOptions struct {
 	File       string
 	Mission    string
+	Prompt     string // what the entry set out to be about (a record link); saved as prompt
 	ClaimsFile string
 	KeepInbox  bool
 }
@@ -35,6 +36,7 @@ type Episode struct {
 	Language    string   `yaml:"language"`
 	Detected    string   `yaml:"detected,omitempty"`
 	Mission     string   `yaml:"mission"`
+	Prompt      string   `yaml:"prompt,omitempty"`
 	Vitals      *string  `yaml:"vitals"`
 	Entities    []string `yaml:"entities"`
 	ClaimCount  int      `yaml:"claims"`
@@ -144,7 +146,7 @@ func Ingest(ctx context.Context, v *Vault, opts IngestOptions) (*Episode, error)
 		Media: m.Path, SHA256: m.SHA256,
 		Transcript:  filepath.ToSlash(strings.TrimSuffix(m.Path, filepath.Ext(m.Path)) + ".words." + t.Model + "." + t.Language + ".json"),
 		Transcriber: t.Transcribr + " " + t.Model, Language: t.Language, Detected: t.Detected,
-		Mission: missionID, Entities: claimEntities(claims), ClaimCount: len(claims), Extractor: ex.Name(),
+		Mission: missionID, Prompt: opts.Prompt, Entities: claimEntities(claims), ClaimCount: len(claims), Extractor: ex.Name(),
 	}
 	if err := writeEpisode(v, ep, lines, claims); err != nil {
 		return nil, err

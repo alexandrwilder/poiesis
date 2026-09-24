@@ -26,6 +26,7 @@ type recordState struct {
 	parts          []string
 	recorded       time.Duration // finished parts
 	confirmDiscard bool
+	about          string // what this entry is to be about, from a record link: shown, then saved as prompt
 	processing     bool
 	procStart      time.Time
 	completed      string // "DAY 0412 · 03:41" shown after completing, until the entry appears
@@ -151,9 +152,54 @@ func (m *tuiModel) enterRecord() tea.Cmd {
 	return tickCmd()
 }
 
+// follow does what a Poiesis link asks (link.go): the record screen, ready, with the line to
+// talk about, or an entry at its moment. The recording itself is always started by the
+// person, and an entry being recorded is never interrupted or relabelled.
+func (m *tuiModel) follow(s string) tea.Cmd {
+	l, err := parseLink(s)
+	if err != nil {
+		m.status = err.Error()
+		return nil
+	}
+	busy := m.record.phase == "recording" || m.record.phase == "paused"
+	if l.record {
+		if busy {
+			m.status = "recording now, so the link was not opened"
+			return nil
+		}
+		m.record.about = l.about
+		if m.scr != screenRecord {
+			return m.enterRecord()
+		}
+		return nil
+	}
+	if busy {
+		m.status = "recording now, so the link was not opened"
+		return nil
+	}
+	for i, e := range m.data.entries {
+		if e.ID != l.entry {
+			continue
+		}
+		if m.scr == screenRecord {
+			m.leaveRecord() // the camera rests
+		}
+		m.openEntry(i)
+		for j, line := range m.entry.lines { // the line that holds that second
+			if line.Start <= l.t {
+				m.entry.cursor.cursor = j
+			}
+		}
+		return nil
+	}
+	m.status = "this log has no entry " + l.entry
+	return nil
+}
+
 func (m *tuiModel) leaveRecord() {
 	if m.record.phase == "ready" {
-		m.stopCap() // the camera stops when you leave, unless an entry is paused
+		m.stopCap()         // the camera stops when you leave, unless an entry is paused
+		m.record.about = "" // not now: the line to talk about goes too
 	}
 	m.enterLog()
 }
@@ -358,6 +404,8 @@ func (m *tuiModel) completeEntry() tea.Cmd {
 	st.completed = fmt.Sprintf("■ ENTRY COMPLETE  ·  %s", mmss(total.Seconds()))
 	m.status = ""
 	mission := strings.TrimSpace(st.mission.Value())
+	prompt := st.about
+	st.about = "" // the next entry starts without it
 	v := m.v
 	out := v.Path("inbox", time.Now().Format("2006-01-02T15-04-05")+".mp4")
 	// no picture until the entry is processed (pictureMayStart); it comes back in ingestDoneMsg
@@ -365,7 +413,7 @@ func (m *tuiModel) completeEntry() tea.Cmd {
 		if err := concatSegments(findTool(v.Config.FFmpegBin), parts, out); err != nil {
 			return ingestDoneMsg{err: err}
 		}
-		ep, err := Ingest(context.Background(), v, IngestOptions{File: out, Mission: mission})
+		ep, err := Ingest(context.Background(), v, IngestOptions{File: out, Mission: mission, Prompt: prompt})
 		return ingestDoneMsg{ep: ep, err: err}
 	})
 }
@@ -445,6 +493,9 @@ func (m *tuiModel) recordOverlays() []overlayText {
 		{row: 4, col: 3, text: missionText, rgb: missionRGB},
 		{row: bottom, col: 3, text: "AUD  ", rgb: rgbDim},
 		{row: bottom, col: 8, text: bar, rgb: rgbAmber},
+	}
+	if st.about != "" {
+		overlays = append(overlays, overlayText{row: 5, col: 3, text: fit("talk about: "+st.about, m.inner()-4), rgb: rgbMid})
 	}
 	row := 6
 	if st.picker.open {

@@ -12,8 +12,9 @@ import (
 )
 
 // The MCP server: a librarian between any AI and the vault. Four read-only verbs over
-// stdio, local only. It never writes, holds no opinions, returns nothing without an
-// episode id and seconds, and caps every answer.
+// stdio, local only, and `record`, which opens the window ready and nothing more. It never
+// writes, holds no opinions, returns nothing without an episode id and seconds, and caps
+// every answer.
 
 const (
 	mcpMaxChars   = 16000
@@ -42,6 +43,22 @@ type momentIn struct {
 	Episode string  `json:"episode" jsonschema:"the entry id, e.g. 2026-09-02-a"`
 	T       float64 `json:"t" jsonschema:"seconds into the recording"`
 	WindowS float64 `json:"window_s,omitempty" jsonschema:"how many seconds of transcript to return around t, default 40"`
+}
+
+type recordIn struct {
+	About string `json:"about,omitempty" jsonschema:"what the person wants to talk about, in a few of their own words; shown on the record screen and saved with the entry"`
+}
+
+// openLink opens Poiesis at a link (link.go); a test puts a fake in its place.
+var openLink = openOrFocus
+
+// mcpRecord opens Poiesis on the record screen, ready. It never starts a recording: the
+// person does, with space, so no text an AI reads can turn a camera into a recorder.
+func (v *Vault) mcpRecord(in recordIn) (string, error) {
+	if err := openLink(v.Root, recordLink(in.About)); err != nil {
+		return "", fmt.Errorf("could not open Poiesis: %w", err)
+	}
+	return "Poiesis is open on the record screen, ready. The person presses space to start and enter to finish; nothing is recorded before that.", nil
 }
 
 func runMCP(v *Vault) error {
@@ -78,6 +95,18 @@ func runMCP(v *Vault) error {
 		Description: "Show me that second: the verbatim transcript around a time in an entry, the claims made in that span, and the playback link."},
 		func(ctx context.Context, req *mcp.CallToolRequest, in momentIn) (*mcp.CallToolResult, any, error) {
 			s, err := v.mcpMoment(in)
+			if err != nil {
+				return nil, nil, err
+			}
+			return text(s), nil, nil
+		})
+
+	no := false
+	opens := &mcp.ToolAnnotations{DestructiveHint: &no, IdempotentHint: true, OpenWorldHint: &no}
+	mcp.AddTool(server, &mcp.Tool{Name: "record", Annotations: opens,
+		Description: "Open Poiesis ready to record, when the person asks to log, record or talk something through. `about` is shown on the record screen as what they want to talk about, and saved with the entry. It does not start the recording: the person presses space when ready. Call it only when the person asked."},
+		func(ctx context.Context, req *mcp.CallToolRequest, in recordIn) (*mcp.CallToolResult, any, error) {
+			s, err := v.mcpRecord(in)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -337,6 +366,7 @@ Claude Desktop: add to claude_desktop_config.json (Settings → Developer → Ed
 Cursor: the same object in .cursor/mcp.json (project) or ~/.cursor/mcp.json (global).
 
 Then ask: "Orient yourself in my log, then tell me what I said about X and play the moment."
-The verbs the AI gets: orient, search, read, moment. Nothing writes.
+The verbs the AI gets: orient, search, read, moment, and record, which opens Poiesis ready
+when you ask to log; you press space. Nothing writes.
 `, exe, vault, exe, vault)
 }

@@ -65,6 +65,9 @@ Search everything you have ever said, across days:
 Then ask the AI you already use, Claude, Cursor or any app that speaks MCP: *what did I say
 about the bakery in August?* It answers from your log and plays the moment.
 
+Or tell it you want to talk: *I need to think out loud about the launch.* Poiesis opens,
+ready, with *the launch* as the line to talk about. You press space.
+
 <sub>The pictures show a fictional demo log.</sub>
 
 ## Your files
@@ -89,6 +92,7 @@ write a Poiesis log, your own AI connection included.
 - **Your choice:** add your own Claude key for a stronger model. Then an entry's words go to
   Anthropic, never the video.
 - **Any AI you connect can read your log. None can change it.**
+- **An AI can open Poiesis ready when you ask. Only you press record.**
 - **Your folder follows your own backup and sync,** for example iCloud.
 - **Free and open source. Your words are never sold.**
 

@@ -63,12 +63,13 @@ usage:
   poiesis ingest [file ...]      process every video in <vault>/inbox, or the given files
   poiesis ingest --orphans       process recordings in raw/ that never became entries (after a crash)
   poiesis lint                   check every claim against its transcript and the entity pages
-  poiesis mcp                    serve the vault to an AI over stdio: orient, search, read, moment (read-only)
+  poiesis mcp                    serve the vault to an AI over stdio: orient, search, read, moment, record (never writes)
   poiesis mcp --connect          print the setup lines for Claude Code, Claude Desktop and Cursor
   poiesis setup                  check tools, download the speech models (verified), set the vault and extractor
                              flags: --install  --swedish  --extractor ollama|claude  --mcp  --app
   poiesis ask "…"               the local AI answers a question from the log, with the moments
   poiesis schema                 print SCHEMA.md
+  poiesis open <link>            open Poiesis at a link: poiesis://record?about=… (ready to record) or an entry's moment
   poiesis update                 install the newest version, the same way this copy was installed
   poiesis dmg [file]             make the Mac install file from this build (build the host first: hosts/mac/build.sh)
 
@@ -139,6 +140,15 @@ func main() {
 	}
 	if cmd == "tray" {
 		if err := runTray(*vaultDir, *trayLogin); err != nil {
+			fail(err)
+		}
+		return
+	}
+	if cmd == "open" { // a Poiesis link (link.go): from the system, a script or a shortcut
+		if _, err := parseLink(fs.Arg(0)); err != nil {
+			fail(err)
+		}
+		if err := openOrFocus(*vaultDir, fs.Arg(0)); err != nil {
 			fail(err)
 		}
 		return

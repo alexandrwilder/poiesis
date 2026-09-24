@@ -111,17 +111,28 @@ func clearWindowPID() {
 	}
 }
 
-// externalCmdMsg is a line the menu bar item left for this window.
+// externalCmdMsg is a link (link.go) that the menu bar item, the system or an AI left for this
+// window.
 type externalCmdMsg string
+
+// takeCommand reads and removes what was left in the command file. A link left more than a
+// minute ago is stale (no window was there to take it) and is dropped, not followed.
+func takeCommand(path string, now time.Time) string {
+	fi, err := os.Stat(path)
+	if err != nil {
+		return ""
+	}
+	b, err := os.ReadFile(path)
+	_ = os.Remove(path)
+	if err != nil || now.Sub(fi.ModTime()) > time.Minute {
+		return ""
+	}
+	return strings.TrimSpace(string(b))
+}
 
 func watchCommandCmd() tea.Cmd {
 	return tea.Tick(400*time.Millisecond, func(time.Time) tea.Msg {
-		b, err := os.ReadFile(commandFile())
-		if err != nil {
-			return externalCmdMsg("")
-		}
-		_ = os.Remove(commandFile())
-		return externalCmdMsg(strings.TrimSpace(string(b)))
+		return externalCmdMsg(takeCommand(commandFile(), time.Now()))
 	})
 }
 
@@ -212,8 +223,8 @@ func (m *tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case askDoneMsg:
 		return m.updateAsk(msg)
 	case externalCmdMsg:
-		if msg == "record" && m.scr != screenRecord {
-			return m, tea.Batch(m.enterRecord(), watchCommandCmd())
+		if msg != "" {
+			return m, tea.Batch(m.follow(string(msg)), watchCommandCmd())
 		}
 		return m, watchCommandCmd()
 	case tea.MouseMsg:

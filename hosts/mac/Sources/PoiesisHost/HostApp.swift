@@ -33,6 +33,16 @@ final class HostApp: NSObject, NSApplicationDelegate, LocalProcessTerminalViewDe
         return true
     }
 
+    /// A poiesis:// link from anywhere on the Mac (docs/FORMAT.md). The core reads it from the
+    /// command file, the way it reads the menu bar's, and decides what it may do.
+    func application(_ application: NSApplication, open urls: [URL]) {
+        for url in urls where url.scheme == "poiesis" {
+            try? Data(url.absoluteString.utf8).write(to: Self.stateFolder().appendingPathComponent("command"))
+        }
+        window?.makeKeyAndOrderFront(nil)
+        NSApp.activate()
+    }
+
     func applicationWillTerminate(_ note: Notification) {
         camera.stopRecording()
         link?.stop()

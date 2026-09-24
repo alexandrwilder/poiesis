@@ -345,7 +345,7 @@ func registerMCP(v *Vault, say func(string, ...any)) error {
 	if err != nil {
 		return fmt.Errorf("claude mcp add: %s", strings.TrimSpace(string(out)))
 	}
-	say("AI  ·  ✓ Claude Code can read this vault (read-only: orient, search, read, moment)")
+	say("AI  ·  ✓ Claude Code can read this vault (orient, search, read, moment) and open Poiesis ready to record")
 	return nil
 }
 
@@ -399,7 +399,9 @@ func writeMacApp(app, vaultRoot string) (string, error) {
 		exe, extra := "poiesis", b.extra
 		if b.id == "app.poiesis" && host != "" {
 			exe = "PoiesisHost"
-			extra += "  <key>LSMinimumSystemVersion</key><string>14.0</string>\n" // what the host needs
+			extra += "  <key>LSMinimumSystemVersion</key><string>14.0</string>\n" + // what the host needs
+				"  <key>CFBundleURLTypes</key><array><dict><key>CFBundleURLName</key><string>Poiesis link</string>" +
+				"<key>CFBundleURLSchemes</key><array><string>poiesis</string></array></dict></array>\n" // link.go
 		}
 		plist := `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">

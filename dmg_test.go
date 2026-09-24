@@ -47,7 +47,8 @@ func TestAppForAnotherMacCarriesNoVault(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"<string>PoiesisHost</string>", "<key>LSMinimumSystemVersion</key><string>14.0</string>"} {
+	for _, want := range []string{"<string>PoiesisHost</string>", "<key>LSMinimumSystemVersion</key><string>14.0</string>",
+		"<key>CFBundleURLSchemes</key><array><string>poiesis</string></array>"} {
 		if !strings.Contains(string(plist), want) {
 			t.Errorf("Info.plist lacks %s", want)
 		}
