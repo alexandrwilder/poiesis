@@ -1,0 +1,11 @@
+name: An idea
+description: Something that would make Poiesis better.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+      description: What you would like, and the moment in your own use when you wanted it.
+    validations:
+      required: true

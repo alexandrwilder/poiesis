@@ -3,6 +3,12 @@
 Thank you for looking. This file is the map: how to build it, where things are, where it
 was made to be extended, and the few rules that keep it honest.
 
+Looking for something to do? The issues marked
+[good first issue](https://github.com/alexandrwilder/poiesis/labels/good%20first%20issue) need
+no knowledge of the rest of the code, and the ones marked
+[help wanted](https://github.com/alexandrwilder/poiesis/labels/help%20wanted) need a Linux or
+Windows machine this project does not have.
+
 ## Build and run
 
     go build -o poiesis .            # one binary (Go 1.26)

@@ -1,0 +1,31 @@
+name: Something is wrong
+description: Poiesis did something it should not, or did not do what it should.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you saw instead.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Poiesis version
+      description: Run `poiesis version`, or look at the updates row in settings.
+      placeholder: poiesis 0.0.6
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: Computer and system
+      placeholder: MacBook Air M2, macOS 26.3
+    validations:
+      required: true
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else
+      description: A screenshot, or lines from the log. Never paste your entries' words unless you want them public.
