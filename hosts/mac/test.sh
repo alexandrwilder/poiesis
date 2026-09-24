@@ -6,7 +6,8 @@
 set -u
 cd "$(dirname "$0")"
 OUT="$(mktemp -d /tmp/phost.XXXX)"
-APP=$(./build.sh | tail -1) || { echo "FAIL: build"; exit 1; }
+APP=$(./build.sh) || { echo "FAIL: build"; exit 1; }
+APP=$(printf '%s\n' "$APP" | tail -1)
 "$APP/Contents/MacOS/PoiesisHost" --core "$(command -v python3)" -- "$PWD/../contract/fake_core.py" "$OUT/report.json" "$OUT/part01.mp4" &
 HP=$!
 n=0; while kill -0 $HP 2>/dev/null && [ $n -lt 60 ]; do sleep 1; n=$((n+1)); done

@@ -32,10 +32,7 @@ final class Camera: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, AVCa
     private var lastTime = CMTime.invalid
     private var requestedAt = CMTime.invalid // frames from before this are not part of the entry
     private var lastShown = CMTime.invalid
-    private var shownGrid = [UInt8](repeating: 0, count: Camera.gridW * Camera.gridH)
-    private var nextGrid = [UInt8](repeating: 0, count: Camera.gridW * Camera.gridH)
-    private var haveShown = false
-    static let gridW = 64, gridH = 36 // one brightness sample per block of the picture
+    private var lastLuma: [UInt8] = []
 
     override init() {
         display.videoGravity = .resizeAspectFill
@@ -51,7 +48,7 @@ final class Camera: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, AVCa
         display.isHidden = !on
         if !on { display.flushAndRemoveImage() }
         queue.async {
-            self.haveShown = false // the first frame after this is always shown
+            self.lastLuma = [] // the first frame after this is always shown
             self.pictureWanted = on
             self.pictureFPS = fps > 0 ? fps : 15
             self.apply()
@@ -186,27 +183,18 @@ final class Camera: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, AVCa
         CVPixelBufferLockBaseAddress(pixels, .readOnly)
         defer { CVPixelBufferUnlockBaseAddress(pixels, .readOnly) }
         guard let base = CVPixelBufferGetBaseAddressOfPlane(pixels, 0) else { return }
-        let width = CVPixelBufferGetWidthOfPlane(pixels, 0), height = CVPixelBufferGetHeightOfPlane(pixels, 0)
-        let stride = CVPixelBufferGetBytesPerRowOfPlane(pixels, 0)
+        let count = CVPixelBufferGetBytesPerRowOfPlane(pixels, 0) * CVPixelBufferGetHeightOfPlane(pixels, 0)
         let bytes = base.assumingMemoryBound(to: UInt8.self)
-        var sum = 0
-        nextGrid.withUnsafeMutableBufferPointer { next in
-            shownGrid.withUnsafeBufferPointer { shown in
-                var k = 0
-                for gy in 0..<Camera.gridH {
-                    let line = bytes + (gy * height / Camera.gridH + height / (2 * Camera.gridH)) * stride
-                    for gx in 0..<Camera.gridW {
-                        let v = line[gx * width / Camera.gridW + width / (2 * Camera.gridW)]
-                        next[k] = v
-                        sum += abs(Int(v) - Int(shown[k]))
-                        k += 1
-                    }
-                }
-            }
+        var luma = [UInt8]()
+        luma.reserveCapacity(count / 97 + 1)
+        var i = 0
+        while i < count { luma.append(bytes[i]); i += 97 }
+        if luma.count == lastLuma.count {
+            var sum = 0
+            for k in 0..<luma.count { sum += abs(Int(luma[k]) - Int(lastLuma[k])) }
+            if sum / max(luma.count, 1) < 3 { return } // still: nothing to draw
         }
-        if haveShown && sum / (Camera.gridW * Camera.gridH) < 3 { return } // still: nothing to draw
-        swap(&shownGrid, &nextGrid)
-        haveShown = true
+        lastLuma = luma
         lastShown = time
         if let list = CMSampleBufferGetSampleAttachmentsArray(sample, createIfNecessary: true), CFArrayGetCount(list) > 0 {
             let attachments = unsafeBitCast(CFArrayGetValueAtIndex(list, 0), to: CFMutableDictionary.self)
@@ -260,21 +248,19 @@ final class Camera: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, AVCa
 
     private func configure() {
         session.beginConfiguration()
-        session.sessionPreset = .inputPriority // the camera format chosen below stays as chosen
-        let chosen = AVCaptureDevice.systemPreferredCamera ?? AVCaptureDevice.default(for: .video)
-        if let camera = chosen, let input = try? AVCaptureDeviceInput(device: camera), session.canAddInput(input) {
+        session.sessionPreset = .hd1280x720
+        if let camera = AVCaptureDevice.default(for: .video), let input = try? AVCaptureDeviceInput(device: camera), session.canAddInput(input) {
             session.addInput(input)
             device = camera
-            useNativeHD(camera)
         } else {
             send(["t": "error", "what": "camera", "text": "no camera was found"])
         }
         if let mic = AVCaptureDevice.default(for: .audio), let input = try? AVCaptureDeviceInput(device: mic), session.canAddInput(input) {
             session.addInput(input)
         }
-        // the camera's own pixel format, so no frame is converted on its way to us
-        let native = device.map { CMFormatDescriptionGetMediaSubType($0.activeFormat.formatDescription) } ?? kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
-        videoOut.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: native]
+        // the camera's own size and format: the display shows it as it is, and the writer's
+        // hardware encoder scales it to 1280x720 on the way into the file
+        videoOut.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange]
         videoOut.alwaysDiscardsLateVideoFrames = true
         videoOut.setSampleBufferDelegate(self, queue: queue)
         if session.canAddOutput(videoOut) { session.addOutput(videoOut) }
@@ -291,18 +277,6 @@ final class Camera: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, AVCa
         if session.canAddOutput(audioOut) { session.addOutput(audioOut) }
         session.commitConfiguration()
         configured = true
-    }
-
-    /// The camera's own 1280x720 format at thirty frames a second, when it has one: the camera
-    /// delivers the recording's size itself, and nothing scales or converts a frame.
-    private func useNativeHD(_ camera: AVCaptureDevice) {
-        let hd = camera.formats.first { format in
-            let size = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
-            return size.width == 1280 && size.height == 720 && format.videoSupportedFrameRateRanges.contains { $0.maxFrameRate >= 30 }
-        }
-        guard let hd, (try? camera.lockForConfiguration()) != nil else { return }
-        camera.activeFormat = hd
-        camera.unlockForConfiguration()
     }
 
     /// The nearest frame rate the camera's current format offers.

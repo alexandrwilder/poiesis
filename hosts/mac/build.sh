@@ -4,7 +4,13 @@
 set -eu
 cd "$(dirname "$0")"
 OUT="${POIESIS_HOST_BUILD:-$HOME/Library/Caches/Poiesis/host-build}"
-swift build -c release --scratch-path "$OUT" 2>&1 | tail -3
+mkdir -p "$OUT"
+# a failed build stops here: the last good program must never pass for this source
+if ! swift build -c release --scratch-path "$OUT" > "$OUT/build.log" 2>&1; then
+  grep "error:" "$OUT/build.log" >&2 || tail -20 "$OUT/build.log" >&2
+  echo "the Mac host did not build (whole log: $OUT/build.log)" >&2
+  exit 1
+fi
 BIN="$OUT/release/PoiesisHost"
 APP="$OUT/Poiesis Host.app"
 rm -rf "$APP"
