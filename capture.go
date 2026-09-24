@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -62,65 +61,6 @@ func concatSegments(ffmpeg string, parts []string, out string) error {
 		_ = os.Remove(p)
 	}
 	return nil
-}
-
-// recoverParts joins what an interrupted session left in inbox/.parts into clips in inbox/,
-// one per entry (an entry's parts start at part01), so they are processed like any other clip.
-// A part no program can read is kept in inbox/.parts/unreadable/, never deleted.
-func recoverParts(v *Vault) ([]string, error) {
-	dir := v.Path("inbox", ".parts")
-	parts, err := filepath.Glob(filepath.Join(dir, "*.part*.mp4"))
-	if err != nil || len(parts) == 0 {
-		return nil, err
-	}
-	sort.Strings(parts) // named by the time each part started: the order they were recorded
-	var groups [][]string
-	for _, p := range parts {
-		if len(groups) == 0 || strings.HasSuffix(p, ".part01.mp4") {
-			groups = append(groups, nil)
-		}
-		groups[len(groups)-1] = append(groups[len(groups)-1], p)
-	}
-	ffmpeg := findTool(v.Config.FFmpegBin)
-	var clips []string
-	for _, g := range groups {
-		readable, err := readableParts(v, g)
-		if err != nil {
-			return clips, err
-		}
-		if len(readable) == 0 {
-			continue
-		}
-		out := v.Path("inbox", strings.SplitN(filepath.Base(readable[0]), ".part", 2)[0]+".mp4")
-		if err := concatSegments(ffmpeg, readable, out); err != nil {
-			return clips, err
-		}
-		clips = append(clips, out)
-	}
-	return clips, nil
-}
-
-// readableParts keeps the parts a program can read, in order. The others are moved to
-// inbox/.parts/unreadable/, kept, never deleted: one broken part never costs the entry.
-func readableParts(v *Vault, parts []string) ([]string, error) {
-	ffprobe := findTool(v.Config.FFprobeBin)
-	var readable []string
-	for _, p := range parts {
-		if pr, err := probe(ffprobe, p); err == nil {
-			if d, _ := strconv.ParseFloat(pr.Format.Duration, 64); d > 0 {
-				readable = append(readable, p)
-				continue
-			}
-		}
-		dir := filepath.Join(filepath.Dir(p), "unreadable")
-		if err := os.MkdirAll(dir, 0o755); err != nil {
-			return readable, err
-		}
-		if err := os.Rename(p, filepath.Join(dir, filepath.Base(p))); err != nil {
-			return readable, err
-		}
-	}
-	return readable, nil
 }
 
 func defaultCaptureDevice() string {

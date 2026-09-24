@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -90,13 +91,17 @@ func newTUI(v *Vault) (*tuiModel, error) {
 }
 
 func (m *tuiModel) Init() tea.Cmd {
+	other := anotherWindowOpen() // asked before this window writes its own id
 	writeWindowPID()
 	m.cacheStreak()
 	if m.startOnLog {
 		m.enterLog()
 		return tea.Batch(watchCommandCmd(), m.startUpdateChecks())
 	}
-	waiting := m.processWaiting() // first, so the picture waits while they are processed
+	var waiting tea.Cmd
+	if !other { // another window may be recording into inbox/.parts right now: its parts are not leftovers
+		waiting = m.processWaiting() // first, so the picture waits while they are processed
+	}
 	// opened by a link: the camera waits for the person's first key (FORMAT.md, Links)
 	if _, err := parseLink(peekCommand(commandFile(), time.Now())); err == nil {
 		return tea.Batch(m.enterRecordResting(), watchCommandCmd(), m.startUpdateChecks(), waiting)
@@ -109,6 +114,16 @@ func (m *tuiModel) Init() tea.Cmd {
 func writeWindowPID() {
 	_ = os.MkdirAll(appStateDir(), 0o755)
 	_ = os.WriteFile(windowPIDFile(), []byte(fmt.Sprint(os.Getpid())), 0o644)
+}
+
+// anotherWindowOpen: a Poiesis window other than this one is running.
+func anotherWindowOpen() bool {
+	b, err := os.ReadFile(windowPIDFile())
+	if err != nil {
+		return false
+	}
+	pid, err := strconv.Atoi(strings.TrimSpace(string(b)))
+	return err == nil && pid != os.Getpid() && processAlive(pid)
 }
 
 func clearWindowPID() {
@@ -258,14 +273,14 @@ func (m *tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.err != nil {
 			if errors.Is(msg.err, ErrNoSpeech) {
 				m.record.lastErr = ""
-				m.status = "nothing was said in that clip, so no entry was made. the video is kept in raw/"
+				m.status = joinNotes("nothing was said in that clip, so no entry was made. the video is kept in raw/", msg.note)
 				return m, nil
 			}
-			m.record.lastErr = "processing failed: " + msg.err.Error()
+			m.record.lastErr = joinNotes("processing failed: "+msg.err.Error(), msg.note)
 			m.status = m.record.lastErr
 			return m, nil
 		}
-		return m, reloadCmd(m.v, fmt.Sprintf("entry %s ready: %d claims", msg.ep.ID, msg.ep.ClaimCount), msg.ep.ID)
+		return m, reloadCmd(m.v, joinNotes(fmt.Sprintf("entry %s ready: %d claims", msg.ep.ID, msg.ep.ClaimCount), msg.note), msg.ep.ID)
 	case askDoneMsg:
 		return m.updateAsk(msg)
 	case externalCmdMsg:

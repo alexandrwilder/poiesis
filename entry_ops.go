@@ -34,7 +34,7 @@ func SetMission(v *Vault, id, mission string) error {
 	if !done {
 		return fmt.Errorf("%s has no mission line", id)
 	}
-	if err := os.WriteFile(p, []byte(strings.Join(lines, "\n")), 0o644); err != nil {
+	if err := writeFileAtomic(p, []byte(strings.Join(lines, "\n")), 0o644); err != nil {
 		return err
 	}
 	if err := rebuildEntityPages(v); err != nil {

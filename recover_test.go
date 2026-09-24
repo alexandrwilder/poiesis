@@ -104,3 +104,115 @@ func TestARecordingThatStopsOnItsOwnSaysSo(t *testing.T) {
 		t.Fatalf("nothing was said: %q", m.record.lastErr)
 	}
 }
+
+// With another Poiesis window open, its parts in inbox/.parts may belong to an entry it is
+// still recording: this window leaves them alone.
+func TestASecondWindowLeavesTheFirstWindowsPartsAlone(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	countCameraOpens(t)
+	v, err := OpenVault(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(v.Path("inbox", "2026-09-24T09-00-00.mp4"), []byte("a clip"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(appStateDir(), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	// the process that runs this test stands in for the other window: alive, and not us
+	if err := os.WriteFile(windowPIDFile(), []byte(strconv.Itoa(os.Getppid())), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	m := &tuiModel{v: v, data: &tuiData{}, focused: true}
+	m.Init()
+	if m.record.pending != 0 || m.record.processing {
+		t.Fatalf("a second window took up the first one's work: pending %d", m.record.pending)
+	}
+}
+
+// Two Poiesis programs started in the same moment never both take up what waits: the one
+// that holds the lock does; a lock left by a crash is taken over after ten minutes.
+func TestRecoveryRunsInOneProcessAtATime(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	v, err := OpenVault(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(v.Path("inbox", "2026-09-24T09-00-00.mp4"), []byte("a clip"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	release, ok := takeRecoveryLock() // the other program
+	if !ok {
+		t.Fatal("no lock to begin with")
+	}
+	m := &tuiModel{v: v, data: &tuiData{}}
+	if m.processWaiting(); m.record.pending != 0 {
+		t.Fatalf("both programs took up the waiting clip: pending %d", m.record.pending)
+	}
+	release()
+	lock := filepath.Join(appStateDir(), "recover.lock")
+	if err := os.WriteFile(lock, nil, 0o644); err != nil { // a crash left it
+		t.Fatal(err)
+	}
+	old := time.Now().Add(-20 * time.Minute)
+	if err := os.Chtimes(lock, old, old); err != nil {
+		t.Fatal(err)
+	}
+	if m.processWaiting(); m.record.pending != 1 {
+		t.Fatalf("a lock left by a crash blocked recovery: pending %d", m.record.pending)
+	}
+	if _, err := os.Stat(lock); !os.IsNotExist(err) {
+		t.Fatal("the lock was not let go")
+	}
+}
+
+// What the person should know about how an entry was saved reaches them, whatever the result.
+func TestAnEntrysNoteReachesThePerson(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	countCameraOpens(t)
+	m := &tuiModel{v: &Vault{Config: defaultConfig()}, data: &tuiData{}}
+	m.record.phase, m.record.processing, m.record.pending = "ready", true, 2
+	m.Update(ingestDoneMsg{err: errors.New("the model failed"), note: "1 part(s) could not be read"})
+	if !strings.Contains(m.record.lastErr, "could not be read") || !strings.Contains(m.record.lastErr, "the model failed") {
+		t.Fatalf("after a failure: %q", m.record.lastErr)
+	}
+	m.Update(ingestDoneMsg{err: ErrNoSpeech, note: "the camera closed late"})
+	if !strings.Contains(m.status, "closed late") {
+		t.Fatalf("after a silent clip: %q", m.status)
+	}
+}
+
+// A part no program can read is kept aside and counted, so the person can be told.
+func TestUnreadablePartsAreCounted(t *testing.T) {
+	ffprobe := findTool("ffprobe")
+	if _, err := exec.LookPath(ffprobe); err != nil {
+		t.Skip("needs ffprobe")
+	}
+	dir := t.TempDir()
+	bad := filepath.Join(dir, "2026-09-24T10-00-00.part01.mp4")
+	if err := os.WriteFile(bad, []byte("not a video"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	readable, kept, err := readableParts(ffprobe, []string{bad})
+	if err != nil || len(readable) != 0 || kept != 1 {
+		t.Fatalf("readable %v, kept aside %d, %v", readable, kept, err)
+	}
+}
+
+// A page is written whole or not at all, and nothing is left beside it.
+func TestPagesAreWrittenWhole(t *testing.T) {
+	dir := t.TempDir()
+	page := filepath.Join(dir, "erik.md")
+	for _, body := range []string{"the first version\n", "the second, longer version of the page\n"} {
+		if err := writeFileAtomic(page, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		if b, _ := os.ReadFile(page); string(b) != body {
+			t.Fatalf("the page holds %q", b)
+		}
+	}
+	if left, _ := filepath.Glob(filepath.Join(dir, ".*")); len(left) != 0 {
+		t.Fatalf("left beside the page: %v", left)
+	}
+}

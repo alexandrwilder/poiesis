@@ -45,8 +45,20 @@ type recordState struct {
 type tickMsg time.Time
 
 type ingestDoneMsg struct {
-	ep  *Episode
-	err error
+	ep   *Episode
+	err  error
+	note string // what the person should know about how the entry was saved, or ""
+}
+
+// joinNotes joins the lines that are not empty with " · ".
+func joinNotes(notes ...string) string {
+	var kept []string
+	for _, n := range notes {
+		if n != "" {
+			kept = append(kept, n)
+		}
+	}
+	return strings.Join(kept, " · ")
 }
 
 func tickCmd() tea.Cmd {
@@ -410,43 +422,15 @@ func (m *tuiModel) totalRecorded() time.Duration {
 	return d
 }
 
-// processWaiting processes what an earlier session left behind (waitingRecordings), one at a
-// time, each on a vault of its own. Nothing is ever lost: an entry cut short by a quit or a
-// crash becomes an entry the next time the window opens.
-func (m *tuiModel) processWaiting() tea.Cmd {
-	items, err := m.v.waitingRecordings()
-	if err != nil {
-		m.status = "could not look for unfinished entries: " + err.Error()
-		return nil
-	}
-	if len(items) == 0 {
-		return nil
-	}
-	root := m.v.Root
-	m.record.processing = true
-	m.record.pending += len(items)
-	m.record.procStart = time.Now()
-	m.status = fmt.Sprintf("%d recording(s) from before were waiting · processing them now", len(items))
-	var cmds []tea.Cmd
-	for _, it := range items {
-		cmds = append(cmds, func() tea.Msg {
-			iv, err := OpenVault(root)
-			if err != nil {
-				return ingestDoneMsg{err: err}
-			}
-			ep, err := Ingest(context.Background(), iv, IngestOptions{File: it.file, KeepInbox: it.inRaw})
-			return ingestDoneMsg{ep: ep, err: err}
-		})
-	}
-	return tea.Batch(cmds...)
-}
-
 // completeEntry joins the parts into one clip in inbox/ and processes it in the background.
 func (m *tuiModel) completeEntry() tea.Cmd {
 	st := &m.record
 	total := m.totalRecorded()
+	note := "" // what the person should know about how this entry was saved
 	if st.cap != nil && st.phase == "recording" {
-		_ = st.cap.stop()
+		if err := st.cap.stop(); err != nil {
+			note = "the camera closed late, so the end of this entry may be missing"
+		}
 		st.cap = nil
 	}
 	parts := st.parts
@@ -460,26 +444,27 @@ func (m *tuiModel) completeEntry() tea.Cmd {
 	mission := strings.TrimSpace(st.mission.Value())
 	prompt := st.about
 	st.about = "" // the next entry starts without it
-	root, ffmpeg := m.v.Root, findTool(m.v.Config.FFmpegBin)
+	root, ffmpeg, ffprobe := m.v.Root, findTool(m.v.Config.FFmpegBin), findTool(m.v.Config.FFprobeBin)
 	out := m.v.Path("inbox", time.Now().Format("2006-01-02T15-04-05")+".mp4")
 	// no picture until the entry is processed (pictureMayStart); it comes back in ingestDoneMsg
 	return tea.Batch(tickCmd(), func() tea.Msg {
-		// a vault of its own: the window's view of the log is never written under it
-		iv, err := OpenVault(root)
+		readable, keptAside, err := readableParts(ffprobe, parts)
+		if keptAside > 0 {
+			note = joinNotes(note, fmt.Sprintf("%d part(s) could not be read and are kept in inbox/.parts/unreadable", keptAside))
+		}
 		if err != nil {
-			return ingestDoneMsg{err: err}
+			return ingestDoneMsg{err: err, note: note}
 		}
-		if parts, err = readableParts(iv, parts); err != nil {
-			return ingestDoneMsg{err: err}
+		if len(readable) == 0 {
+			return ingestDoneMsg{err: errors.New("nothing in this entry's recording could be read"), note: note}
 		}
-		if len(parts) == 0 {
-			return ingestDoneMsg{err: errors.New("nothing in this entry's recording could be read; its parts are kept in inbox/.parts/unreadable")}
+		if err := concatSegments(ffmpeg, readable, out); err != nil {
+			return ingestDoneMsg{err: err, note: note}
 		}
-		if err := concatSegments(ffmpeg, parts, out); err != nil {
-			return ingestDoneMsg{err: err}
-		}
-		ep, err := Ingest(context.Background(), iv, IngestOptions{File: out, Mission: mission, Prompt: prompt})
-		return ingestDoneMsg{ep: ep, err: err}
+		// processed on a vault of its own, opened inside the processing lock: the window's view
+		// of the log is never written under it, and the entry before it is never read half-done
+		ep, err := IngestInto(context.Background(), root, IngestOptions{File: out, Mission: mission, Prompt: prompt})
+		return ingestDoneMsg{ep: ep, err: err, note: note}
 	})
 }
 

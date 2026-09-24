@@ -55,6 +55,22 @@ var ingestMu sync.Mutex
 func Ingest(ctx context.Context, v *Vault, opts IngestOptions) (*Episode, error) {
 	ingestMu.Lock()
 	defer ingestMu.Unlock()
+	return ingestLocked(ctx, v, opts)
+}
+
+// IngestInto opens the log at root for this one entry and processes it, both inside the
+// lock, so it never reads pages that the entry before it is still writing.
+func IngestInto(ctx context.Context, root string, opts IngestOptions) (*Episode, error) {
+	ingestMu.Lock()
+	defer ingestMu.Unlock()
+	v, err := OpenVault(root)
+	if err != nil {
+		return nil, err
+	}
+	return ingestLocked(ctx, v, opts)
+}
+
+func ingestLocked(ctx context.Context, v *Vault, opts IngestOptions) (*Episode, error) {
 	defer setProgress("", 0, 0, 0)
 	// what the entries before this one added, read now that it is this one's turn
 	if err := v.loadEntities(); err != nil {
@@ -401,7 +417,7 @@ func writeEpisode(v *Vault, ep *Episode, lines []Line, claims []Claim) error {
 	for _, l := range lines {
 		fmt.Fprintf(&b, "[%s] %s\n", mmss(l.Start), l.Text)
 	}
-	return os.WriteFile(v.Path("episodes", ep.ID+".md"), []byte(b.String()), 0o644)
+	return writeFileAtomic(v.Path("episodes", ep.ID+".md"), []byte(b.String()), 0o644)
 }
 
 func writeClaims(v *Vault, epID string, claims []Claim) error {
@@ -580,7 +596,7 @@ func rebuildEntityPages(v *Vault) error {
 				fmt.Fprintf(&b, "- [[%s]] · %d\n", r.id, r.n)
 			}
 		}
-		if err := os.WriteFile(v.Path("entities", id+".md"), []byte(b.String()), 0o644); err != nil {
+		if err := writeFileAtomic(v.Path("entities", id+".md"), []byte(b.String()), 0o644); err != nil {
 			return err
 		}
 	}
@@ -640,5 +656,5 @@ func writeIndex(v *Vault) error {
 	if open == 0 {
 		b.WriteString("_none_\n")
 	}
-	return os.WriteFile(v.Path("_index.md"), []byte(b.String()), 0o644)
+	return writeFileAtomic(v.Path("_index.md"), []byte(b.String()), 0o644)
 }

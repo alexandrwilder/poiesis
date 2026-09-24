@@ -148,7 +148,7 @@ func (v *Vault) SaveConfig() error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(v.Path("config.json"), append(b, '\n'), 0o644)
+	return writeFileAtomic(v.Path("config.json"), append(b, '\n'), 0o644)
 }
 
 func (v *Vault) InboxFiles() ([]string, error) {
@@ -168,6 +168,27 @@ func (v *Vault) InboxFiles() ([]string, error) {
 	}
 	sort.Strings(files)
 	return files, nil
+}
+
+// writeFileAtomic writes a whole file or nothing: the text goes to a hidden file beside it,
+// which then takes its place in one rename. A reader, a sync or a crash never sees half a page.
+func writeFileAtomic(path string, data []byte, perm os.FileMode) error {
+	tmp, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".tmp-*")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(tmp.Name()) // gone after the rename; left only if something failed
+	if _, err := tmp.Write(data); err != nil {
+		tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	if err := os.Chmod(tmp.Name(), perm); err != nil {
+		return err
+	}
+	return os.Rename(tmp.Name(), path)
 }
 
 // loadEntities reads the frontmatter of every entity page.
@@ -388,37 +409,6 @@ func findTool(name string) string {
 
 // Orphans lists recordings in raw/ that have no entry page: what a crash or a closed
 // laptop leaves behind. Nothing is ever lost; it is processed later.
-//
-// waitingRecordings is everything an earlier session left to process: the parts of an
-// interrupted entry (joined first), clips in the inbox, and recordings in raw/ without an
-// entry. inRaw marks those already in raw/.
-type waitingRecording struct {
-	file  string
-	inRaw bool
-}
-
-func (v *Vault) waitingRecordings() ([]waitingRecording, error) {
-	if _, err := recoverParts(v); err != nil {
-		return nil, fmt.Errorf("the parts of an unfinished entry: %w", err)
-	}
-	var out []waitingRecording
-	inbox, err := v.InboxFiles()
-	if err != nil {
-		return nil, err
-	}
-	for _, f := range inbox {
-		out = append(out, waitingRecording{file: f})
-	}
-	orphans, err := v.Orphans()
-	if err != nil {
-		return nil, err
-	}
-	for _, f := range orphans {
-		out = append(out, waitingRecording{file: f, inRaw: true})
-	}
-	return out, nil
-}
-
 func (v *Vault) Orphans() ([]string, error) {
 	clips, err := filepath.Glob(v.Path("raw", "*", "*", "*.mp4"))
 	if err != nil {
