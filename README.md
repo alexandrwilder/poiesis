@@ -93,7 +93,8 @@ You only talk freely where you know no one else is listening. So:
 - **Video and sound never leave it.**
 - **Any AI you connect can read your log. None can change it.**
 - **An AI can open Poiesis ready when you ask. Only you press record.**
-- **Your folder follows your own backup and sync,** for example iCloud.
+- **Your folder stays on your Mac.** Time Machine backs it up; move it into iCloud Drive from
+  settings if you want it on your phone.
 - **Free and open source. Your words are never sold.**
 
 Exactly what reaches the network, and when: [docs/INSTALL.md](docs/INSTALL.md#what-reaches-the-network).

@@ -7,7 +7,7 @@
   and the local AI's model (3.4 GB) the first time an entry is sorted.
 - About 31 MB for each three-minute entry, the video and the sound the words are heard from, so
   about 11 GB a year if you record every day.
-- Your yes, once, for the camera, the microphone and the Documents folder.
+- Your yes, once, for the camera and the microphone.
 
 ## The one line
 
@@ -15,8 +15,10 @@
 
 It downloads the newest release and checks every file against the release's checksums. It
 puts Poiesis in `~/Applications`, the `poiesis` command in `~/.local/bin` and the menu bar item
-at login, then opens Poiesis. Your log is made in `~/Documents/Poiesis Vault` when Poiesis
-first opens.
+at login, then opens Poiesis. Your log is made in `~/Poiesis Vault`, in your home folder, when
+Poiesis first opens. A log made before 0.1 stays where it is, in `~/Documents/Poiesis Vault`.
+Settings can move it, into iCloud Drive for example; then your phone can reach it too, and Apple
+can read it unless Advanced Data Protection is on.
 
 ## The install file
 
@@ -52,8 +54,8 @@ own certificate, so macOS keeps the camera and microphone approved across update
 - **Only if you connect an AI app:** it reads the text it asks for. An AI that runs in the
   cloud, such as Claude or ChatGPT, sends that text to its company, as it does with anything
   you type to it. Never the video.
-- **Your log folder follows your own backup and sync,** for example iCloud if Documents is
-  synced.
+- **Your log folder stays on this Mac,** unless you move it into a synced folder such as
+  iCloud Drive. Time Machine backs it up.
 
 ## Remove Poiesis
 
@@ -62,5 +64,5 @@ own certificate, so macOS keeps the camera and microphone approved across update
     rm -rf ~/Applications/Poiesis.app /Applications/Poiesis.app ~/.local/bin/poiesis
     rm -rf ~/Library/Application\ Support/Poiesis    # the models and the app's own settings
 
-Your log stays in `~/Documents/Poiesis Vault`: plain files, yours. Delete that folder only if
+Your log stays in `~/Poiesis Vault` (or `~/Documents/Poiesis Vault`, from before 0.1): plain files, yours. Delete that folder only if
 you want the entries gone too.

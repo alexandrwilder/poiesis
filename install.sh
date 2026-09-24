@@ -73,9 +73,9 @@ Darwin)
   say "  the app:       $dest/Poiesis.app   (Launchpad, Spotlight, the Dock)"
   say "  the command:   poiesis"
   say "  the menu bar:  starts at every login"
-  say "  your log:      ~/Documents/Poiesis Vault   (plain files, yours)"
+  say "  your log:      ~/Poiesis Vault   (plain files, yours; a log from before stays where it is)"
   say ""
-  say "opening it now. macOS will ask once for the Documents folder, the camera and the microphone."
+  say "opening it now. macOS will ask once for the camera and the microphone."
   open "$dest/Poiesis.app"
   ;;
 Linux)

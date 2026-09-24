@@ -415,7 +415,7 @@ func writeMacApp(app, vaultRoot string) (string, error) {
   <key>CFBundleIconFile</key><string>Poiesis</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>NSHighResolutionCapable</key><true/>
-` + extra + `  <key>NSDocumentsFolderUsageDescription</key><string>Poiesis keeps your entries in a folder in Documents. It reads and writes only that folder.</string>
+` + extra + `  <key>NSDocumentsFolderUsageDescription</key><string>Your Poiesis log is in a folder in Documents. Poiesis reads and writes only that folder.</string>
   <key>NSCameraUsageDescription</key><string>Poiesis records you when you press space. The video never leaves this computer.</string>
   <key>NSMicrophoneUsageDescription</key><string>Poiesis records your voice when you press space. The recording never leaves this computer.</string>
 </dict></plist>
@@ -695,7 +695,7 @@ func embedTerminal(app string) error {
 		{"CFBundleVersion", version + "." + fmt.Sprint(time.Now().Unix())},
 		{"NSCameraUsageDescription", "Poiesis records you when you press space. The video stays on this computer."},
 		{"NSMicrophoneUsageDescription", "Poiesis records your voice when you press space. The audio stays on this computer."},
-		{"NSDocumentsFolderUsageDescription", "Poiesis keeps your entries in a folder in Documents. It reads and writes only that folder."},
+		{"NSDocumentsFolderUsageDescription", "Your Poiesis log is in a folder in Documents. Poiesis reads and writes only that folder."},
 		{"SUEnableAutomaticChecks", "false"},
 		{"SUAutomaticallyUpdate", "false"},
 		{"SUAllowsAutomaticUpdates", "false"},

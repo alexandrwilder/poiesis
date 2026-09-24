@@ -20,10 +20,9 @@ const dmgReadMe = `Poiesis %s, a preview for a few people
 
    Poiesis is not signed by Apple yet. The line tells macOS that you chose to
    install it; without it macOS stops Poiesis and the programs inside it.
-3. Open Poiesis. It asks once for the Documents folder, the camera and the
-   microphone.
+3. Open Poiesis. It asks once for the camera and the microphone.
 
-Your entries stay on this Mac, as plain files in Documents > Poiesis Vault.
+Your entries stay on this Mac, as plain files in your home folder > Poiesis Vault.
 The first entry fetches the speech model once (about 0.6 GB) and the local
 AI's model once (about 3.4 GB). While Poiesis is open it asks GitHub every
 hour for the newest version number; settings can turn that off. Your

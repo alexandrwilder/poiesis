@@ -74,7 +74,7 @@ usage:
   poiesis dmg [file]             make the Mac install file from this build (build the host first: hosts/mac/build.sh)
 
 flags (all commands):
-  --vault DIR      vault folder (default: $POIESIS_VAULT or ~/Documents/Poiesis Vault)
+  --vault DIR      vault folder (default: $POIESIS_VAULT, the one chosen in settings, or ~/Poiesis Vault)
   --lang auto|sv|en  language setting for this run (default: vault config, then auto)
   --extractor claude|ollama|file   who extracts claims (default: vault config, then ollama, on this computer)
   --model NAME     model for the extractor (default: qwen3.5:4b with ollama, claude-opus-5 with claude)
@@ -170,6 +170,7 @@ func main() {
 		fmt.Println(out)
 		return
 	}
+	usedDefault := *vaultDir == defaultVaultDir() // no --vault, no log the app was set up with
 	v, err := OpenVault(*vaultDir)
 	if err != nil {
 		fail(err)
@@ -188,6 +189,9 @@ func main() {
 	case "ui", "view":
 		if cmd == "ui" {
 			theHost = connectHost() // nil unless a host started this core (docs/HOST.md)
+			if usedDefault {
+				rememberFirstVault(v.Root)
+			}
 		}
 		m, err := newTUI(v)
 		if err != nil {
@@ -312,7 +316,23 @@ func defaultVaultDir() string {
 		}
 	}
 	home, _ := os.UserHomeDir()
-	return filepath.Join(home, "Documents", "Poiesis Vault")
+	if ranBefore() { // made before 0.1, whose logs were in Documents: that log stays where it is
+		return filepath.Join(home, "Documents", "Poiesis Vault")
+	}
+	// a new log lives in the home folder: on this computer only, never emptied by a sync, and
+	// no question about the Documents folder (PRINCIPLES, rule 1)
+	return filepath.Join(home, "Poiesis Vault")
+}
+
+// ranBefore: Poiesis has opened on this computer before; every version writes streak.txt when
+// its window opens.
+func ranBefore() bool { return fileThere(filepath.Join(appStateDir(), "streak.txt")) }
+
+// rememberFirstVault keeps the log a window first opened, so a later default never moves it.
+func rememberFirstVault(root string) {
+	if !fileThere(filepath.Join(appStateDir(), "vault.txt")) {
+		_ = setVaultPointer(root)
+	}
 }
 
 // humanize turns an entity id into a display name: "the-bakery" -> "The Bakery".
